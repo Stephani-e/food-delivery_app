@@ -10,6 +10,7 @@ export const appwriteConfig = {
     projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
     databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
     userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_ID!,
+    categoryCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORY_ID!,
 }
 
 export const client = new Client();
@@ -143,12 +144,37 @@ export async function syncUserWithDB({ accountId, email, name, avatar, provider 
         const existingUsers = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
-            [Query.equal("accountId", accountId)]
+            [
+                Query.equal("email", email)
+            ]
         );
 
         if (existingUsers.total > 0) {
             console.log("🟢 User already exists, reusing existing document");
-            return existingUsers.documents[0];
+            const existingUser = existingUsers.documents[0];
+
+            // 2️⃣ If provider doesn’t match, merge it
+            if (!existingUser.provider.includes(provider)) {
+                console.log(`🔄 Merging provider for ${email}: ${existingUser.provider} → ${provider}`);
+
+                // Handle multiple providers (e.g. "email,google")
+                const mergedProviders = Array.isArray(existingUser.provider)
+                    ? Array.from(new Set([...existingUser.provider, provider]))
+                    : Array.from(new Set([...existingUser.provider.split(','), provider]));
+
+                const updatedUser = await databases.updateDocument(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.userCollectionId,
+                    existingUser.$id,
+                    {provider: mergedProviders}
+                );
+
+                console.log("✅ Updated user provider(s):", mergedProviders);
+                return updatedUser;
+            }
+
+            console.log("🟢 User already exists with matching provider");
+            return existingUser;
         }
 
         // 2️⃣ Create if not found
@@ -156,7 +182,7 @@ export async function syncUserWithDB({ accountId, email, name, avatar, provider 
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             ID.unique(),
-            { accountId, email, name, avatar, provider }
+            { accountId, email, name, avatar, provider: [provider] }
         );
 
         console.log("✅ Created new user document");
