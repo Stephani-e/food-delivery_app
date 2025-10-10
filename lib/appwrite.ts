@@ -43,19 +43,14 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
         const avatarUrl = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(name || "User")}`;
         console.log("🟢 Avatar URL generated:", avatarUrl);
 
-        // 4️⃣ Create the user document
-        const newUser = await databases.createDocument(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            ID.unique(),
-            {
-                email,
-                name,
-                accountId: newAccount.$id,
-                avatar: avatarUrl,
-                provider: "email-password",
-            }
-        );
+        // 🟢 Sync to DB (same logic for email-password or Google)
+        const newUser = await syncUserWithDB({
+            accountId: newAccount.$id,
+            email,
+            name,
+            avatar: avatarUrl,
+            provider: "email-password",
+        });
 
         console.log("✅ User document created successfully:", newUser);
         return newUser;
@@ -117,37 +112,58 @@ export async function goggleLogin() {
         const currentUser = await account.get();
 
         // 6️⃣ Create user document if not already in database
-        const userAvatar = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(currentUser.name || "User")}`;
+        // 🟢 Sync to DB safely (no duplicates)
+        const userAvatar = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(
+            currentUser.name || "User"
+        )}`;
 
-        try {
-            // First-time login — create user record
-            await databases.createDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.userCollectionId,
-                ID.unique(), 
-                {
-                    accountId: currentUser.$id,
-                    email: currentUser.email,
-                    name: currentUser.name,
-                    avatar: userAvatar,
-                    provider: "google",
-                }
-            );
-        } catch (e: any) {
-            // Ignore "Document already exists" errors (user already in DB)
-            if (!String(e?.message).includes("document_already_exists")) {
-                throw e;
-            }
-        }
+        const userDoc = await syncUserWithDB({
+            accountId: currentUser.$id,
+            email: currentUser.email,
+            name: currentUser.name,
+            avatar: userAvatar,
+            provider: "google",
+        });
 
-        // ✅ Add avatar URL to user object for frontend
         return {
             ...currentUser,
-            avatar: userAvatar,
-        };
+            avatar: userDoc.avatar,
+            docId: userDoc.$id,
+        }
     } catch (err) {
         console.error("❌ Google login error:", err);
         return false;
+    }
+}
+
+// 🟩 NEW — Unified Sync Helper (prevents duplicates)
+export async function syncUserWithDB({ accountId, email, name, avatar, provider }: any) {
+    try {
+        // 1️⃣ Check if user exists
+        const existingUsers = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            [Query.equal("accountId", accountId)]
+        );
+
+        if (existingUsers.total > 0) {
+            console.log("🟢 User already exists, reusing existing document");
+            return existingUsers.documents[0];
+        }
+
+        // 2️⃣ Create if not found
+        const newUser = await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.userCollectionId,
+            ID.unique(),
+            { accountId, email, name, avatar, provider }
+        );
+
+        console.log("✅ Created new user document");
+        return newUser;
+    } catch (err: any) {
+        console.error("❌ syncUserWithDB error:", err.message);
+        throw err;
     }
 }
 
