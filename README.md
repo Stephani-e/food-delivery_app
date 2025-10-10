@@ -1,50 +1,117 @@
-# Welcome to your Expo app 👋
+<div align="center">
+  <br />
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+  <div>
+    <img src="https://img.shields.io/badge/-React_Native-black?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native" />
+    <img src="https://img.shields.io/badge/-Expo-black?style=for-the-badge&logo=expo&logoColor=white" alt="Expo" />
+    <img src="https://img.shields.io/badge/-TypeScript-black?style=for-the-badge&logo=typescript&logoColor=white&color=3178C6" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/-Tailwind_CSS-black?style=for-the-badge&logo=tailwindcss&logoColor=white&color=06B6D4" alt="Tailwind CSS" />
+    <img src="https://img.shields.io/badge/-Appwrite-black?style=for-the-badge&logo=appwrite&logoColor=white&color=F02E65" alt="Appwrite" />
+  </div>
 
-## Get started
+<h2 align="center">🎬 Food Delivery App</h2>
+<h4 align="center">A modern food delivery app built with Expo, React Native, and Appwrite</h4>
+</div>
 
-1. Install dependencies
+---
+## 📋Table of Contents
+1. 🤖 [Introduction](#introduction)
+2. ⚙️ [Tech Stack](#tech-stack)
+3. 🔋 [Features](#features)
+4. 🚀 [Installation & Setup](#installation-&-setup)
+5. 🖼️ [Screenshots](#screenshots)
+6. 🌍 [Demo Link](#demo-link)
+7. 🤝 [Contributing](#contributing)
 
-   ```bash
-   npm install
-   ```
+---
+## <a name="introduction">🤖 Introduction</a>
 
-2. Start the app
+**Food Delivery App** is...,
+---
+## <a name="tech-stack">⚙️ Tech Stack</a>
 
-   ```bash
-   npx expo start
-   ```
+- **[Expo](https://expo.dev/)** – The all-in-one platform for developing and deploying cross-platform React Native apps, featuring fast refresh, OTA updates, and file-based routing via Expo Router.
 
-In the output, you'll find options to open the app in a
+- **[React Native](https://reactnative.dev/)** – The framework powering the app’s cross-platform UI, enabling rich, native-feeling experiences built entirely in JavaScript/TypeScript.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **[Appwrite](https://appwrite.io/)** – An open-source backend platform providing authentication, databases, storage, and serverless functions — all through a clean, developer-friendly API.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **[TypeScript](https://www.typescriptlang.org/)** – Ensures type safety and maintainable code, improving reliability and scalability throughout the project.
 
-## Get a fresh project
+- **[Tailwind CSS](https://tailwindcss.com/)** with **[NativeWind](https://www.nativewind.dev/)** – Enables utility-first styling for React Native components, delivering consistent, responsive, and elegant UI designs rapidly.
 
-When you're ready, run:
+- **[Zustand](https://github.com/pmndrs/zustand)** is a minimal, hook-based state management library for React and React Native. It lets you manage global state with zero boilerplate, no context providers, and excellent performance through selective state subscriptions.
 
+- **[Sentry](https://jsm.dev/rn-food-sentry)** is a powerful error tracking and performance monitoring tool for React Native apps. It helps you detect, diagnose, and fix issues in real-time to improve app stability and user experience.
+
+---
+
+## <a name="features">🔋 Features</a>
+**Google Authentication**: Secure and seamless user sign-ins using Google.
+
+**Home Page**: Showcases the latest offers and directs users to filtered search results.
+
+**Search Page**: Lets users explore all foods with category filters and keyword search.
+
+**Product Details Page**: Displays food images, key details, and allows adding items to the cart.
+
+**Cart Page**: Review selected items and see the total price.
+
+**Profile Page**: Manage user settings and preferences.
+
+**Appwrite Integration**: Handles backend database and file storage for food items.
+
+and many more, including code architecture and reusability.
+
+---
+
+## <a name="installation-&-setup">🚀 Installation & Setup</a>
+- Prerequisites:
+  Make sure you have the following installed on your machine:
+
+- **[Git](https://git-scm.com/)**
+- **[Node.js](https://nodejs.org/en)**
+- **[npm](https://www.npmjs.com/)** _(Node Package Manager)_
+- Appwrite account and project configured
+
+### 🚀 Getting Started
 ```bash
-npm run reset-project
+# 1️⃣ Clone the repository
+git clone https://github.com/Stephani-e/food-delivery_app.git
+
+# 2️⃣ Install dependencies
+npm install
+
+# 3️⃣ Run the project locally
+npx expo start
 ```
+- Then scan the QR code using the Expo Go app or run it on your simulator.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+--- 
 
-## Learn more
+## <a name="screenhots">🖼️ Screenshots</a>
 
-To learn more about developing your project with Expo, look at the following resources:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### COMING SOON
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## <a name="demo-link">🌍 Demo Link</a>
+🔗 Live Demo: Coming Soon
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## <a name="contributing">🤝 Contributing</a>
+Contributions are welcome!
+Fork this repository, make your improvements, and open a pull request.
+
+---
+
+<div align="center">
+
+Built with ❤️ by Stephanie Gbenga-Adeyemi
+<br/>
+<a href="#">Portfolio</a> • <a href="www.linkedin.com/in/gbenga-adeyemistephanie">LinkedIn</a> • <a href="https://github.com/Stephani-e">GitHub</a>
+
+</div>
+
