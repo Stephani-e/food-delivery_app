@@ -6,6 +6,7 @@ import CustomButton from "@/components/CustomButton";
 import {validateForm} from "@/utils/validateForm";
 import {goggleLogin, signIn} from "@/lib/appwrite";
 import CustomGoogleButton from "@/components/CustomGoogleButton";
+import * as Sentry from '@sentry/react-native'
 
 const SignIn = () => {
 
@@ -27,7 +28,8 @@ const SignIn = () => {
             Alert.alert("Success", "Sign In Success");
             router.replace('/')
         } catch (error: any) {
-            Alert.alert("Error", error.message);
+            Alert.alert("Error", error.message)
+            Sentry.captureException(error);
         } finally {
             setIsSubmitting(false);
         }

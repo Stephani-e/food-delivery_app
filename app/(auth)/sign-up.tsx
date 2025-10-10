@@ -6,6 +6,7 @@ import CustomButton from "@/components/CustomButton";
 import {validateForm} from "@/utils/validateForm";
 import {createUser, goggleLogin} from "@/lib/appwrite";
 import CustomGoogleButton from "@/components/CustomGoogleButton";
+import * as Sentry from "@sentry/react-native";
 
 const SignUp = () => {
 
@@ -46,6 +47,7 @@ const SignUp = () => {
             }
         } catch (error: any) {
             Alert.alert("Error", error.message);
+            Sentry.captureException(error);
         } finally {
             setIsGoogleLoading(false);
         }

@@ -164,7 +164,6 @@ export const getCurrentUser = async () => {
 
         if (!currentUser) throw Error;
 
-
         return currentUser.documents[0];
     } catch (e: any) {
         // 🧠 Only log clean info for debugging
