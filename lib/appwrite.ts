@@ -1,4 +1,4 @@
-import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query} from "react-native-appwrite";
+import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query, Storage} from "react-native-appwrite";
 import {CreateUserParams, SignInParams} from "@/type";
 import * as Linking from 'expo-linking';
 import {openAuthSessionAsync} from "expo-web-browser";
@@ -26,6 +26,7 @@ client
 
 export const account = new Account(client);
 export const databases = new Databases(client);
+export const storage = new Storage(client);
 const avatars = new Avatars(client);
 
 // 🟢 Create a user manually (email + password)

@@ -1,10 +1,11 @@
-import React from 'react'
+import React, {useEffect, useState} from 'react'
 import {Redirect, Tabs} from "expo-router";
 import useAuthStore from "@/store/auth.store";
 import {TabBarIconProps} from "@/type";
 import {Image, Text, View} from "react-native";
 import {images} from "@/constants";
 import cn from "clsx";
+import SplashScreen from "@/components/SplashScreen";
 
 const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
     <View className="tab-icon">
@@ -21,10 +22,39 @@ const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
 )
 
 export default function TabLayout() {
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, isLoading } = useAuthStore();
+    const [ showSplash, setShowSplash ] = useState(true);
 
-    if (!isAuthenticated) return <Redirect href="/sign-in" />
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowSplash(false);
+        }, 2500); // splash will show for 2.5 seconds
+        return () => clearTimeout(timer);
+    }, []);
 
+    if (showSplash) {
+        return (
+            <SplashScreen
+                message="Loading your dashboard..."
+                image={require("@/assets/images/login-graphic.png")}
+                duration={2000}
+            />
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <SplashScreen
+                message="Checking your session..."
+                duration={1500}
+            />
+        );
+    }
+
+    // 👇 Redirect if not logged in
+    if (!isAuthenticated) return <Redirect href="/sign-in" />;
+
+    // 👇 Show main tabs once ready
     return (
         <Tabs
             screenOptions={{

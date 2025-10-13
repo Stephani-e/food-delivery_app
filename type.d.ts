@@ -115,3 +115,10 @@ interface GetMenuParams {
     category: string;
     query: string;
 }
+
+interface SplashScreenProps {
+    message?: string;
+    image?: any;
+    duration?: number;
+    onFinish?: () => void;
+}

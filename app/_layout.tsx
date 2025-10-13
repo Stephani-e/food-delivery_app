@@ -1,9 +1,10 @@
-import {SplashScreen, Stack} from "expo-router";
+import {SplashScreen as ExpoSplash, Stack} from "expo-router";
 import './globals.css'
 import {useFonts} from "expo-font";
 import {useEffect} from "react";
 import * as Sentry from '@sentry/react-native';
 import useAuthStore from "@/store/auth.store";
+import SplashScreen from "@/components/SplashScreen";
 
 Sentry.init({
   dsn: 'https://b8b1c43159ba962d27ece14206596c2e@o4510164534689792.ingest.de.sentry.io/4510164537901136',
@@ -36,14 +37,31 @@ export default Sentry.wrap(function RootLayout() {
 
   useEffect(() => {
     if(error) throw error;
-    if(fontsLoaded) SplashScreen.hideAsync();
+    if(fontsLoaded) ExpoSplash.hideAsync();
   }, [fontsLoaded, error]);
 
+  // Fetch user before rendering anything
   useEffect(() => {
-    fetchAuthenticatedUser()
+    const initialize = async () => {
+      try {
+        await fetchAuthenticatedUser(); // ⬅️ await ensures state updates before rendering
+      } catch (err) {
+        console.log("Auth init failed:", err);
+      }
+    };
+    initialize();
   }, []);
 
-  if (!fontsLoaded || isLoading) return null;
+  if (!fontsLoaded) {
+    return <SplashScreen message="Loading Fonts..." />
+  }
+
+  if (isLoading) return (
+      <SplashScreen
+          message="Authenticating User..."
+          image={require("@/assets/images/logo.png")}
+      />
+  );
 
   return <Stack screenOptions={{headerShown: false}} />;
 });

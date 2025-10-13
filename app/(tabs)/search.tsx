@@ -1,11 +1,12 @@
-import {View, Text} from 'react-native'
+import {View, Text, Button} from 'react-native'
 import React from 'react'
+import {SafeAreaView} from "react-native-safe-area-context";
 
 const Search = () => {
     return (
-        <View>
+        <SafeAreaView>
             <Text>Search</Text>
-        </View>
+        </SafeAreaView>
     )
 }
 export default Search
