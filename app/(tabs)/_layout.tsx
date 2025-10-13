@@ -1,5 +1,5 @@
 import React from 'react'
-import {Redirect, Slot, Tabs} from "expo-router";
+import {Redirect, Tabs} from "expo-router";
 import useAuthStore from "@/store/auth.store";
 import {TabBarIconProps} from "@/type";
 import {Image, Text, View} from "react-native";

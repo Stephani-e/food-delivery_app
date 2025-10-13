@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text, ActivityIndicator, View, Image } from "react-native";
+import {ActivityIndicator, Image, Text, TouchableOpacity, View} from "react-native";
 import {CustomGoogleButtonProps} from "@/type";
 import {images} from "@/constants";
 import cn from "clsx";

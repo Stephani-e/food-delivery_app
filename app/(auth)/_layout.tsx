@@ -1,4 +1,4 @@
-import {View, Text, KeyboardAvoidingView, Platform, ScrollView, Dimensions, Image, ImageBackground} from 'react-native'
+import {Dimensions, Image, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, View} from 'react-native'
 import React from 'react'
 import {Redirect, Slot} from "expo-router";
 import {images} from "@/constants";

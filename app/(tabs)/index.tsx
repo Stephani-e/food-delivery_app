@@ -1,10 +1,9 @@
-import {Button, FlatList, Image, Pressable, Text, TouchableOpacity, View} from "react-native";
+import {FlatList, Image, Pressable, Text, TouchableOpacity, View} from "react-native";
 import {images, offers} from "@/constants";
 import {SafeAreaView} from "react-native-safe-area-context";
 import CartButton from "@/components/CartButton";
 import {Fragment} from "react";
 import cn from 'clsx'
-import * as Sentry from '@sentry/react-native'
 import useAuthStore from "@/store/auth.store";
 
 export default function Index() {
@@ -41,7 +40,7 @@ export default function Index() {
                           style={{
                               backgroundColor: item.color
                           }}
-                          android_ripple={{ color: "fffff22" }}
+                          android_ripple={{ color: "#fffff22" }}
                       >
                           {({pressed}) => (
                               <Fragment>

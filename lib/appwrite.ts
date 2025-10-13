@@ -28,7 +28,7 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 const avatars = new Avatars(client);
 
-// 🟢 Create user manually (email + password)
+// 🟢 Create a user manually (email + password)
 export const createUser = async ({ email, password, name }: CreateUserParams) => {
     try {
         console.log("🟡 Creating new account with:", { email, name });
@@ -116,7 +116,7 @@ export async function goggleLogin() {
         // 5️⃣ Fetch the user from Appwrite Auth
         const currentUser = await account.get();
 
-        // 6️⃣ Create user document if not already in database
+        // 6️⃣ Create a user document if not already in database
         // 🟢 Sync to DB safely (no duplicates)
         const userAvatar = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(
             currentUser.name || "User"
@@ -144,7 +144,7 @@ export async function goggleLogin() {
 // 🟩 NEW — Unified Sync Helper (prevents duplicates)
 export async function syncUserWithDB({ accountId, email, name, avatar, provider }: any) {
     try {
-        // 1️⃣ Check if user exists
+        // 1️⃣ Check if a user exists
         const existingUsers = await databases.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
@@ -157,7 +157,7 @@ export async function syncUserWithDB({ accountId, email, name, avatar, provider 
             console.log("🟢 User already exists, reusing existing document");
             const existingUser = existingUsers.documents[0];
 
-            // 2️⃣ If provider doesn’t match, merge it
+            // 2️⃣ If the provider doesn’t match, merge it
             if (!existingUser.provider.includes(provider)) {
                 console.log(`🔄 Merging provider for ${email}: ${existingUser.provider} → ${provider}`);
 
