@@ -1,5 +1,5 @@
 import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query, Storage} from "react-native-appwrite";
-import {CreateUserParams, GetMenuParams, SignInParams} from "@/type";
+import {CreateUserParams, GetMenuParams, MenuItem, SignInParams} from "@/type";
 import * as Linking from 'expo-linking';
 import {openAuthSessionAsync} from "expo-web-browser";
 
@@ -242,14 +242,16 @@ export const getMenu = async ({ category, query }: GetMenuParams ) => {
         if (category) queries.push(Query.equal('categories', category));
         if (query) queries.push(Query.search('name', query));
 
-        const menus = await databases.listDocuments(
+        const menus = await databases.listDocuments<MenuItem>(
             appwriteConfig.databaseId,
             appwriteConfig.menuCollectionId,
             queries
         )
 
+        console.log("✅ Fetched menus:", menus.total);
         return menus.documents;
     } catch (e) {
+        console.error("❌ Error fetching menu:");
         throw new Error(e as string);
     }
 }

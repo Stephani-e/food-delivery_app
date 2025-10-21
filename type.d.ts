@@ -5,9 +5,12 @@ export interface MenuItem extends Models.Document {
     price: number;
     image_url: string;
     description: string;
+    availability: boolean;
     calories: number;
     protein: number;
     rating: number;
+    categories: string;
+    menuCustomizations: string;
     type: string;
 }
 
