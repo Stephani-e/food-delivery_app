@@ -8,6 +8,8 @@ import CartButton from "@/components/CartButton";
 import cn from "clsx";
 import MenuCard from "@/components/MenuCard";
 import {MenuItem} from "@/type";
+import Filter from "@/components/Filter";
+import SearchBar from "@/components/SearchBar";
 
 const Search = () => {
     const { category, query } = useLocalSearchParams<{query: string; category: string}>()
@@ -19,10 +21,10 @@ const Search = () => {
     }, [category, query]);
     //console.log("data:", JSON.stringify(data));
 
-    console.log("🔍 Search data length:", data?.length);
-    if (data?.length) {
-        console.log("🧾 First menu item:", data[0]);
-    }
+    // console.log("🔍 Search data length:", data?.length);
+    // if (data?.length) {
+    //     console.log("🧾 First menu item:", data[0]);
+    // }
 
     return (
         <SafeAreaView className='bg-white h-full'>
@@ -39,9 +41,10 @@ const Search = () => {
 
                             <CartButton />
                         </View>
-                        <Text>Search Input</Text>
 
-                        <Text>Filter</Text>
+                        <SearchBar />
+
+                        <Filter categories={categories!} />
                     </View>
                 )}
                 data={data}

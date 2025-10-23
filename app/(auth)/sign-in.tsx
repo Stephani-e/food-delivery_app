@@ -23,10 +23,12 @@ const SignIn = () => {
         const { email, password } = form;
 
         try {
-            await signIn({ email, password })
+            const user = await signIn({ email, password })
 
-            Alert.alert("Success", "Sign In Success");
-            router.replace('/')
+            if (user) {
+                Alert.alert("Success", "Sign In Success");
+                router.replace('/')
+            }
         } catch (error: any) {
             Alert.alert("Error", error.message)
             Sentry.captureException(error);

@@ -1,10 +1,9 @@
-import {View, Text, TouchableOpacity, Image, Platform} from 'react-native'
+import {Text, TouchableOpacity, Image, Platform} from 'react-native'
 import {MenuItem} from "@/type";
 import {appwriteConfig} from "@/lib/appwrite";
 
 const MenuCard = ({ item: { image_url, name, price }}: {item: MenuItem}) => {
-
-    console.log("Menu images:", image_url, name)
+   //console.log("Menu images:", image_url, name)
     return (
         <TouchableOpacity className='menu-card' style={Platform.OS === 'android' ? { elevation: 10, shadowColor: '#878787'}: {}}>
             <Image

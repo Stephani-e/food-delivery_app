@@ -1,5 +1,5 @@
 import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query, Storage} from "react-native-appwrite";
-import {CreateUserParams, GetMenuParams, MenuItem, SignInParams} from "@/type";
+import {Category, CreateUserParams, GetMenuParams, MenuItem, SignInParams} from "@/type";
 import * as Linking from 'expo-linking';
 import {openAuthSessionAsync} from "expo-web-browser";
 
@@ -34,18 +34,18 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
     try {
         console.log("🟡 Creating new account with:", { email, name });
 
-        // 🔹 0️⃣ Ensure no active session before starting
+        //Ensure no active session before starting
         await account.deleteSessions().catch(() => {});
 
-        // 1️⃣ Create the account
+        //Create the account
         const newAccount = await account.create(ID.unique(), email, password, name);
         if (!newAccount) throw new Error("Failed to create user account");
 
-        // 2️⃣ Sign in (create a session)
+        //Sign in (create a session)
         await signIn({email, password});
         console.log("✅ Signed in successfully");
 
-        // 3️⃣ Generate avatar as a URL string
+        //Generate avatar as a URL string
         const avatarUrl = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(name || "User")}`;
         console.log("🟢 Avatar URL generated:", avatarUrl);
 
@@ -75,7 +75,22 @@ export const createUser = async ({ email, password, name }: CreateUserParams) =>
 
 export const signIn = async ({email, password}: SignInParams ) => {
     try {
-        const session = await account.createEmailPasswordSession(email, password);
+       await account.createEmailPasswordSession(email, password);
+       const currentUser = await account.get();
+
+        const userAvatar = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(
+            currentUser.name || "User"
+        )}`;
+
+        await syncUserWithDB({
+            accountId: currentUser.$id,
+            email: currentUser.email,
+            name: currentUser.name,
+            avatar: userAvatar,
+            provider: "email-password",
+        });
+
+        return currentUser;
 
     } catch (err) {
         throw new Error(err as string);
@@ -223,14 +238,17 @@ export const getCurrentUser = async () => {
     }
 }
 
-export const getCategories = async () => {
+export const getCategories = async (): Promise<Category[]> => {
     try {
-        const categories = await databases.listDocuments(
+        const categories = await databases.listDocuments<Category>(
             appwriteConfig.databaseId,
             appwriteConfig.categoryCollectionId,
             [Query.limit(100)]
         )
+
+        return categories.documents;
     } catch (e) {
+        console.error("Failed to fetch categories");
         throw new Error(e as string);
     }
 }
