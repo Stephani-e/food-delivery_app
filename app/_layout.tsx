@@ -19,11 +19,26 @@ Sentry.init({
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+  integrations: [
+      Sentry.mobileReplayIntegration(),
+      Sentry.feedbackIntegration({
+        // Additional SDK configuration goes in here, for example:
+        styles: {
+          submitButton: {
+            backgroundColor: "#6a1b9a",
+          },
+        },
+        namePlaceholder: "Fullname",
+        isNameRequired: true,
+        isEmailRequired: true,
+      }),
+  ],
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });
+
+Sentry.hideFeedbackButton();
 
 export default Sentry.wrap(function RootLayout() {
   const { isLoading, fetchAuthenticatedUser } = useAuthStore();
