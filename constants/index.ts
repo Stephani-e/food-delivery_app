@@ -41,6 +41,9 @@ import pizzaOne from "@/assets/images/pizza-one.png";
 import salad from "@/assets/images/salad.png";
 import success from "@/assets/images/success.png";
 import tomatoes from "@/assets/images/tomatoes.png";
+import wraps from "@/assets/menuImages/Panner Tikka Wrap.png";
+import sandwiches from "@/assets/menuImages/Chicken Club Sandwich.png";
+import bowl from "@/assets/menuImages/Protein Power Bowl.png";
 
 export const CATEGORIES = [
     {
@@ -89,6 +92,24 @@ export const offers = [
         title: "BURRITO DELIGHT",
         image: buritto,
         color: "#EB920C",
+    },
+    {
+        id: 5,
+        title: "FILLING WRAPS",
+        image: wraps,
+        color: "#111920",
+    },
+    {
+        id: 6,
+        title: "SANDWICHES",
+        image: sandwiches,
+        color: "#B42B4D",
+    },
+    {
+        id: 6,
+        title: "BOWLS OF GOODNESS",
+        image: bowl,
+        color: "#6CE4E7",
     },
 ];
 
@@ -178,6 +199,9 @@ export const images = {
     onions,
     pizzaOne,
     salad,
+    wraps,
+    sandwiches,
+    bowl,
     success,
     tomatoes,
     arrowBack,

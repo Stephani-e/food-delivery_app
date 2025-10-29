@@ -1,13 +1,34 @@
 import {FlatList, Image, Pressable, Text, TouchableOpacity, View} from "react-native";
-import {images, offers} from "@/constants";
+import {images} from "@/constants";
+import { useRouter } from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
 import CartButton from "@/components/CartButton";
-import {Fragment} from "react";
+import {Fragment, useEffect, useState} from "react";
 import cn from 'clsx'
 import useAuthStore from "@/store/auth.store";
+import {Offer} from "@/type";
+import {getOffers} from "@/lib/appwrite";
 
 export default function Index() {
     const { user } = useAuthStore();
+    const router = useRouter();
+    const [ offers, setOffers ] = useState<Offer[]>([]);
+    const [ loading, setLoading ] = useState(true);
+
+    useEffect(() => {
+        const fetchOffers = async () => {
+            try {
+                const result = await getOffers();
+                setOffers(result);
+            } catch (err) {
+                console.log('Error Fetching Offers:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchOffers();
+    }, []);
 
     console.log("useAuthStore:", JSON.stringify(user, null, 2));
   return (
@@ -31,16 +52,25 @@ export default function Index() {
           )}
           contentContainerClassName="pb-28 px-25"
           data={offers}
+          keyExtractor={(item) => item.$id}
           renderItem={({ item, index }) => {
               const isEven = index % 2 === 0;
               return(
-                  <View>
+                  <View
+                      style={{
+                          marginHorizontal: 15,
+                          marginBottom: 5,
+                      }}
+                  >
                       <Pressable
                           className={cn ("offer-card", isEven ? 'flex-row-reverse' : 'flex-row')}
                           style={{
-                              backgroundColor: item.color
+                              backgroundColor: item.color,
+                              borderRadius: 15,
+                              overflow: "hidden"
                           }}
                           android_ripple={{ color: "#fffff22" }}
+                          onPress={() => router.push(`/description?offersId=${item.$id}` as any)}
                       >
                           {({pressed}) => (
                               <Fragment>
@@ -48,7 +78,7 @@ export default function Index() {
                                       className="h-full w-1/2"
                                   >
                                       <Image
-                                          source={item.image}
+                                          source={{uri: item.image_url}}
                                           className="size-full"
                                           resizeMode="contain"
                                       />

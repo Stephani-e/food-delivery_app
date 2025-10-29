@@ -17,12 +17,26 @@ export interface MenuItem extends Models.Document {
 export interface Category extends Models.Document {
     name: string;
     description: string;
+    itemCount?: number;
+    offer_id?: string;
+    menu?: MenuItem[];
+}
+
+export interface Offer {
+    $id: string;
+    title: string;
+    color: string;
+    image_url: string;
+    isActive: boolean;
+    description?: string;
+    categories?: Category | string | Models.Document;
 }
 
 export interface User extends Models.Document {
     name: string;
     email: string;
     avatar: string;
+    provider: string[];
 }
 
 export interface CartCustomization {

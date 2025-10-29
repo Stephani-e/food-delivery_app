@@ -1,6 +1,7 @@
 import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query, Storage} from "react-native-appwrite";
-import {Category, CreateUserParams, GetMenuParams, MenuItem, SignInParams} from "@/type";
+import {Category, CreateUserParams, GetMenuParams, MenuItem, Offer, SignInParams} from "@/type";
 import * as Linking from 'expo-linking';
+import { User } from '@/type'
 import {openAuthSessionAsync} from "expo-web-browser";
 
 
@@ -15,6 +16,7 @@ export const appwriteConfig = {
     menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_ID!,
     customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CUSTOMIZATIONS_ID!,
     menu_customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_CUSTOMIZATIONS_ID!,
+    offersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_OFFERS_ID!,
 }
 
 export const client = new Client();
@@ -28,6 +30,25 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 const avatars = new Avatars(client);
+
+// Maps a raw Appwrite document to your app's User type
+export function toUser(doc: any): User {
+    return {
+        $id: doc.$id,
+        $databaseId: doc.$databaseId ?? "",
+        $collectionId: doc.$collectionId ?? "",
+        $createdAt: doc.$createdAt ?? "",
+        $updatedAt: doc.$updatedAt ?? "",
+        name: doc.name,
+        email: doc.email,
+        avatar: doc.avatar,
+        provider: Array.isArray(doc.provider)
+            ? doc.provider
+            : (doc.provider ? [doc.provider] : []),
+        $sequence: 0,
+        $permissions: []
+    };
+}
 
 // 🟢 Create a user manually (email + password)
 export const createUser = async ({ email, password, name }: CreateUserParams) => {
@@ -271,5 +292,55 @@ export const getMenu = async ({ category, query }: GetMenuParams ) => {
     } catch (e) {
         console.error("❌ Error fetching menu:");
         throw new Error(e as string);
+    }
+}
+
+export const getOffers = async (): Promise<Offer[]> => {
+    try {
+        const response = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.offersCollectionId,
+            [
+                Query.limit(100),
+                Query.equal('isActive', true),
+                Query.orderAsc('$createdAt')
+            ]
+        );
+
+        return response.documents as unknown as Offer[];
+    } catch (error) {
+        console.error('Failed to fetch offers from offer list', error);
+        throw new Error('Unable to Fetch offers from appwrite');
+    }
+}
+
+export const getOfferCategories = async (offersId: string): Promise<{
+    $id: string;
+    name: any;
+    description: any;
+    itemCount: any;
+    menu: any
+}[]> => {
+    try {
+        const response = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.categoryCollectionId,
+            [
+                Query.equal('offer_id', offersId),
+                Query.limit(100),
+                Query.select(['*', 'menu.*'])
+            ]
+        );
+
+        return response.documents.map((doc) => ({
+            $id: doc.$id,
+            name: doc.name,
+            description: doc.description,
+            itemCount: doc.itemCount ?? 0,
+            menu: doc.menu ?? [],
+        }));
+    } catch (error) {
+        console.error('Failed to fetch offer categories from offer list', error);
+        return [];
     }
 }

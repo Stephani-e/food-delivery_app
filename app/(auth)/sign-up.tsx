@@ -4,8 +4,9 @@ import {Link, router} from "expo-router";
 import CustomInput from "@/components/CustomInput";
 import CustomButton from "@/components/CustomButton";
 import {validateForm} from "@/utils/validateForm";
-import {createUser, goggleLogin} from "@/lib/appwrite";
+import {createUser, goggleLogin, toUser} from "@/lib/appwrite";
 import CustomGoogleButton from "@/components/CustomGoogleButton";
+import useAuthStore from "@/store/auth.store";
 import * as Sentry from "@sentry/react-native";
 
 const SignUp = () => {
@@ -23,9 +24,13 @@ const SignUp = () => {
         setIsSubmitting(true);
 
         try {
-            await createUser({ email, password, name})
-
-            router.replace('/')
+            const user = await createUser({ email, password, name})
+            if (user) {
+                useAuthStore.getState().setUser(toUser(user));
+                useAuthStore.getState().setIsAuthenticated(true);
+                Alert.alert("Success", "Sign Up Success");
+                router.replace('/')
+            }
         } catch (error: any) {
             Alert.alert("Error", error.message);
         } finally {
@@ -40,6 +45,8 @@ const SignUp = () => {
             const user = await goggleLogin();
 
             if (user) {
+                useAuthStore.getState().setUser(toUser(user));
+                useAuthStore.getState().setIsAuthenticated(true);
                 Alert.alert("Success", "Sign Up Success");
                 router.replace('/')
             } else {
