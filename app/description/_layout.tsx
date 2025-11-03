@@ -20,13 +20,10 @@ export default function DescriptionLayout() {
 
             {/* Offers Details Page */}
             <Stack.Screen
-                name="[offersId]"
+                name="item/[itemId]"
                 options={{
-                    headerShown: true,
+                    headerShown: false,
                     headerTransparent: true,
-                    headerTitle: "",
-                    headerTintColor: "red", // back button color
-                    title: "Offers Details",
                 }}
             />
         </Stack>

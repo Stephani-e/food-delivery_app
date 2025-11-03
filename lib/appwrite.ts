@@ -1,5 +1,5 @@
 import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query, Storage} from "react-native-appwrite";
-import {Category, CreateUserParams, GetMenuParams, MenuItem, Offer, SignInParams} from "@/type";
+import {Category, CreateUserParams, Customization, GetMenuParams, MenuItem, Offer, SignInParams} from "@/type";
 import * as Linking from 'expo-linking';
 import { User } from '@/type'
 import {openAuthSessionAsync} from "expo-web-browser";
@@ -17,6 +17,7 @@ export const appwriteConfig = {
     customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CUSTOMIZATIONS_ID!,
     menu_customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_CUSTOMIZATIONS_ID!,
     offersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_OFFERS_ID!,
+    reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_ID!,
 }
 
 export const client = new Client();
@@ -284,9 +285,8 @@ export const getMenu = async ({ category, query }: GetMenuParams ) => {
         const menus = await databases.listDocuments<MenuItem>(
             appwriteConfig.databaseId,
             appwriteConfig.menuCollectionId,
-            queries
+            queries,
         )
-
         console.log("✅ Fetched menus:", menus.total);
         return menus.documents;
     } catch (e) {
@@ -294,6 +294,76 @@ export const getMenu = async ({ category, query }: GetMenuParams ) => {
         throw new Error(e as string);
     }
 }
+
+export const getMenuItemById = async (itemId: string): Promise<MenuItem | null> => {
+    try {
+        const response = await databases.getDocument<MenuItem>(
+            appwriteConfig.databaseId,
+            appwriteConfig.menuCollectionId,
+            itemId
+        );
+
+        if (response.categories && typeof response.categories === "string") {
+            try {
+                const categoryDoc = await databases.getDocument(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.categoryCollectionId,
+                    response.categories
+                );
+                response.categories = {
+                    $id: categoryDoc.$id,
+                    name: categoryDoc.name,
+                };
+            } catch (err) {
+                console.warn("⚠️ Failed to fetch category:", err);
+            }
+        }
+        return response;
+    } catch (error) {
+        console.error('Failed to fetch menu item by id', error);
+        return null;
+    }
+}
+
+export const getMenuCustomizations = async (menuId: string): Promise<Customization[]> => {
+    try {
+        const response = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.menu_customizationsCollectionId,
+            [Query.equal("menu", menuId)]
+        );
+
+        console.log("Customizations fetched:", response.documents.length);
+
+        // Fetch full customization documents by their IDs
+        const customizationIds = response.documents.map((doc: any) => doc.customizations).filter(Boolean);
+
+        const customizationDocs = await Promise.all(
+            customizationIds.map(async (id: string) => {
+                try {
+                    const c = await databases.getDocument<Customization>(
+                        appwriteConfig.databaseId,
+                        appwriteConfig.customizationsCollectionId, // ✅ your actual customizations collection
+                        id
+                    );
+                    return c;
+                } catch (err) {
+                    console.warn(`⚠️ Failed to fetch customization ${id}`, err);
+                    return null;
+                }
+            })
+        );
+
+        const validCustomizations = customizationDocs.filter(Boolean) as Customization[];
+
+        console.log("🍔 Full customizations:", JSON.stringify(validCustomizations, null, 2));
+        return validCustomizations;
+    } catch (error) {
+        console.error("Failed to fetch menu customizations", error);
+        return [];
+    }
+};
+
 
 export const getOffers = async (): Promise<Offer[]> => {
     try {
@@ -344,3 +414,4 @@ export const getOfferCategories = async (offersId: string): Promise<{
         return [];
     }
 }
+

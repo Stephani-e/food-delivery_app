@@ -37,6 +37,7 @@ export default function OfferDescription() {
 
                 //Fetch its related categories
                 const fetchedCategories = await getOfferCategories(offersId as string);
+                // @ts-ignore
                 setCategories(fetchedCategories);
             } catch (err) {
                 console.log('Error Fetching Offer Details:', err);

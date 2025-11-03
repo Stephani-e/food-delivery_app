@@ -9,9 +9,14 @@ export interface MenuItem extends Models.Document {
     calories: number;
     protein: number;
     rating: number;
-    categories: string;
-    menuCustomizations: string;
+    categories: string | { $id: string, name: string };
     type: string;
+    avgRating?: number;
+    reviewCount?: number;
+    bun_type?: string;
+    delivery?: string;
+    deliveryTime?: string;
+    menuCustomizations: MenuCustomization[];
 }
 
 export interface Category extends Models.Document {
@@ -45,6 +50,19 @@ export interface CartCustomization {
     price: number;
     type: string;
 }
+
+export interface Customization extends Models.Document {
+    name: string;
+    price: number;
+    type: "topping" | "side" | "extra" | string;
+    image_url?: string;
+}
+
+export interface MenuCustomization extends Models.Document {
+    menu: string;
+    customizations: Customization;
+}
+
 
 export interface CartItemType {
     id: string; // menu item id
@@ -138,4 +156,12 @@ interface SplashScreenProps {
     image?: any;
     duration?: number;
     onFinish?: () => void;
+}
+
+export interface EmptyStateProps {
+    imageSource: any; // require() or { uri: "" }
+    title: string;
+    caption?: string;
+    height?: number;
+    width?: number;
 }

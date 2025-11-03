@@ -6,6 +6,7 @@ import cn from "clsx";
 import {PaymentInfoStripeProps} from "@/type";
 import CustomButton from "@/components/CustomButton";
 import CartItem from "@/components/CartItem";
+import EmptyState from "@/components/EmptyState";
 
 const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfoStripeProps) => (
     <View className='flex-between flex-row my-1'>
@@ -31,7 +32,13 @@ const Cart = () => {
                     <CustomHeader title='Your Cart'
                     />
                 }
-                ListEmptyComponent={() => <Text>Cart Empty</Text>}
+                ListEmptyComponent={() =>
+                    <EmptyState
+                        imageSource={require('@/assets/images/empty-cart.png')}
+                        title='Nothing in your Cart'
+                        caption='To add items to your cart, Go to search page or home page to make a selection.'
+                    />
+                }
                 contentContainerClassName='pb-28 px-5 pt-5'
                 data={items}
                 keyExtractor={item => item.id}

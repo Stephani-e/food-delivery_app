@@ -1,6 +1,5 @@
 import {Text, TouchableOpacity, Image, Platform} from 'react-native'
 import {MenuItem} from "@/type";
-import {appwriteConfig} from "@/lib/appwrite";
 import {useCartStore} from "@/store/cart.store";
 
 const MenuCard = ({ item: { $id, image_url, name, price }}: {item: MenuItem}) => {

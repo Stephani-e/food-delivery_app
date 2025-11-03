@@ -9,6 +9,7 @@ import cn from "clsx";
 import MenuCard from "@/components/MenuCard";
 import Filter from "@/components/Filter";
 import SearchBar from "@/components/SearchBar";
+import EmptyState from "@/components/EmptyState";
 
 const Search = () => {
     const { category, query } = useLocalSearchParams<{query: string; category: string}>()
@@ -61,7 +62,13 @@ const Search = () => {
                 numColumns={2}
                 columnWrapperClassName='gap-7'
                 contentContainerClassName='gap-7 px-5 pb-32'
-                ListEmptyComponent={() => !loading && <Text>No Results</Text>}
+                ListEmptyComponent={() => !loading &&
+                    <EmptyState
+                        imageSource={require('@/assets/images/empty-state.png')}
+                        title='Nothing Matched Your Search'
+                        caption='Try searching for something else, or try different terms, or check for typos'
+                    />
+                }
             />
         </SafeAreaView>
     )
