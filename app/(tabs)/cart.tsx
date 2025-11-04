@@ -7,6 +7,7 @@ import {PaymentInfoStripeProps} from "@/type";
 import CustomButton from "@/components/CustomButton";
 import CartItem from "@/components/CartItem";
 import EmptyState from "@/components/EmptyState";
+import {useEffect} from "react";
 
 const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfoStripeProps) => (
     <View className='flex-between flex-row my-1'>
@@ -20,10 +21,15 @@ const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfo
 )
 
 const Cart = () => {
-    const { items, getTotalItems, getTotalPrice } = useCartStore();
+    const { items, getTotalItems, getTotalPrice, clearCart } = useCartStore();
 
     const totalItems = getTotalItems();
     const totalPrice = getTotalPrice();
+
+    useEffect(() => {
+        const unSubscribe = useCartStore.getState().subscribeToCartRealTime();
+        return () => unSubscribe();
+    }, []);
 
     return (
         <SafeAreaView className='bg-white h-full'>

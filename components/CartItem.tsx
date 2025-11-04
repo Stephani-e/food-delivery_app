@@ -1,10 +1,21 @@
 import { useCartStore } from "@/store/cart.store";
 import { CartItemType } from "@/type";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import {Alert, Image, Text, TouchableOpacity, View} from "react-native";
 import {images} from "@/constants";
 
 const CartItem = ({ item }: { item: CartItemType }) => {
     const { increaseQty, decreaseQty, removeItem } = useCartStore();
+
+    const handleRemoveItem = () => {
+        Alert.alert(
+            'Remove Item?',
+            `Are you sure you want to remove '${item.name}' from your cart?`,
+            [
+                {text: 'Cancel', style: 'cancel'},
+                {text: 'Yes Remove It', style: "destructive", onPress: () => removeItem(item.id, item.customizations!)},
+            ]
+        )
+    }
 
     return (
         <View className="cart-item">
@@ -54,7 +65,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
             </View>
 
             <TouchableOpacity
-                onPress={() => removeItem(item.id, item.customizations!)}
+                onPress={handleRemoveItem}
                 className="flex-center"
             >
                 <Image source={images.trash} className="size-5" resizeMode="contain" />

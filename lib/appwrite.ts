@@ -18,6 +18,7 @@ export const appwriteConfig = {
     menu_customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_CUSTOMIZATIONS_ID!,
     offersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_OFFERS_ID!,
     reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_ID!,
+    cartCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CART_ID!,
 }
 
 export const client = new Client();
@@ -30,6 +31,7 @@ client
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export { Query, ID }
 const avatars = new Avatars(client);
 
 // Maps a raw Appwrite document to your app's User type
@@ -364,7 +366,6 @@ export const getMenuCustomizations = async (menuId: string): Promise<Customizati
     }
 };
 
-
 export const getOffers = async (): Promise<Offer[]> => {
     try {
         const response = await databases.listDocuments(
@@ -414,4 +415,3 @@ export const getOfferCategories = async (offersId: string): Promise<{
         return [];
     }
 }
-

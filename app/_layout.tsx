@@ -5,6 +5,7 @@ import {useEffect} from "react";
 import * as Sentry from '@sentry/react-native';
 import useAuthStore from "@/store/auth.store";
 import SplashScreen from "@/components/SplashScreen";
+import { useCartStore } from "@/store/cart.store";
 
 Sentry.init({
   dsn: 'https://b8b1c43159ba962d27ece14206596c2e@o4510164534689792.ingest.de.sentry.io/4510164537901136',
@@ -29,7 +30,9 @@ Sentry.init({
 
 
 export default Sentry.wrap(function RootLayout() {
-  const { isLoading, fetchAuthenticatedUser } = useAuthStore();
+  const { isLoading, isAuthenticated, user, fetchAuthenticatedUser } = useAuthStore();
+  const { loadCartFromServer } = useCartStore();
+
   const [fontsLoaded, error] = useFonts({
     "QuickSand-Bold": require('../assets/fonts/Quicksand-Bold.ttf'),
     "QuickSand-Medium": require('../assets/fonts/Quicksand-Medium.ttf'),
@@ -54,6 +57,13 @@ export default Sentry.wrap(function RootLayout() {
     };
     initialize();
   }, []);
+
+  // Load cart when the user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadCartFromServer();
+    }
+  }, [isAuthenticated, user]);
 
   if (!fontsLoaded) {
     return <SplashScreen message="Loading Fonts..." />
