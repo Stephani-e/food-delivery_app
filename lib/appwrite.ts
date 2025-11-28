@@ -1,25 +1,31 @@
-import {Account, Avatars, Client, Databases, ID, OAuthProvider, Query, Storage} from "react-native-appwrite";
-import {Category, CreateUserParams, Customization, GetMenuParams, MenuItem, Offer, SignInParams} from "@/type";
+import {
+    Account,
+    Avatars,
+    Client,
+    Databases,
+    ID,
+    OAuthProvider,
+    Permission,
+    Query, Role,
+    Storage
+} from "react-native-appwrite";
+import {
+    Board, CartCustomization,
+    Category,
+    CreateUserParams,
+    Customization,
+    GetMenuParams,
+    MenuItem,
+    Offer,
+    SavedBoardPayload,
+    SignInParams,
+    User,
+} from "@/type";
 import * as Linking from 'expo-linking';
-import { User } from '@/type'
+import { useCartStore } from "@/store/cart.store";
 import {openAuthSessionAsync} from "expo-web-browser";
-
-
-export const appwriteConfig = {
-    platform: "com.phanie.fooddelivery",
-    endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!,
-    projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!,
-    databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
-    bucketId: process.env.EXPO_PUBLIC_APPWRITE_ASSETS_ID!,
-    userCollectionId: process.env.EXPO_PUBLIC_APPWRITE_USER_ID!,
-    categoryCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORY_ID!,
-    menuCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_ID!,
-    customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CUSTOMIZATIONS_ID!,
-    menu_customizationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MENU_CUSTOMIZATIONS_ID!,
-    offersCollectionId: process.env.EXPO_PUBLIC_APPWRITE_OFFERS_ID!,
-    reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_ID!,
-    cartCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CART_ID!,
-}
+import { appwriteConfig } from "@/lib/appwriteConfig";
+import useAuthStore from "@/store/auth.store";
 
 export const client = new Client();
 
@@ -31,7 +37,7 @@ client
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
-export { Query, ID }
+export { Permission, Role, Query, ID }
 const avatars = new Avatars(client);
 
 // Maps a raw Appwrite document to your app's User type
@@ -42,6 +48,7 @@ export function toUser(doc: any): User {
         $collectionId: doc.$collectionId ?? "",
         $createdAt: doc.$createdAt ?? "",
         $updatedAt: doc.$updatedAt ?? "",
+        accountId: doc.accountId || doc.$id,
         name: doc.name,
         email: doc.email,
         avatar: doc.avatar,
@@ -53,7 +60,7 @@ export function toUser(doc: any): User {
     };
 }
 
-// 🟢 Create a user manually (email + password)
+// Create a user manually (email + password)
 export const createUser = async ({ email, password, name }: CreateUserParams) => {
     try {
         console.log("🟡 Creating new account with:", { email, name });
@@ -121,7 +128,7 @@ export const signIn = async ({email, password}: SignInParams ) => {
     }
 }
 
-// 🟢 Google Login
+// Google Login
 export async function goggleLogin() {
     try {
         await account.deleteSessions().catch(() => {});
@@ -181,7 +188,7 @@ export async function goggleLogin() {
     }
 }
 
-// 🟩 NEW — Unified Sync Helper (prevents duplicates)
+// NEW — Unified Sync Helper (prevents duplicates)
 export async function syncUserWithDB({ accountId, email, name, avatar, provider }: any) {
     try {
         // 1️⃣ Check if a user exists
@@ -202,15 +209,21 @@ export async function syncUserWithDB({ accountId, email, name, avatar, provider 
                 console.log(`🔄 Merging provider for ${email}: ${existingUser.provider} → ${provider}`);
 
                 // Handle multiple providers (e.g. "email,google")
-                const mergedProviders = Array.isArray(existingUser.provider)
-                    ? Array.from(new Set([...existingUser.provider, provider]))
-                    : Array.from(new Set([...existingUser.provider.split(','), provider]));
+                const existingProvider = Array.isArray(existingUser.provider)
+                    ? existingUser.provider
+                    : existingUser.provider?.split(',') || [];
+                const mergedProviders = Array.from(new Set([...existingProvider, provider]));
 
                 const updatedUser = await databases.updateDocument(
                     appwriteConfig.databaseId,
                     appwriteConfig.userCollectionId,
                     existingUser.$id,
-                    {provider: mergedProviders}
+                    {
+                        provider: mergedProviders,
+                        accountId: existingUser.accountId ||  accountId,
+                        name: existingUser.name || name,
+                        avatar: existingUser.avatar || avatar,
+                    }
                 );
 
                 console.log("✅ Updated user provider(s):", mergedProviders);
@@ -248,7 +261,20 @@ export const getCurrentUser = async () => {
             [Query.equal('accountId', currentAccount.$id)],
         )
 
-        if (!currentUser) throw Error;
+        if (!currentUser || currentUser.total === 0) {
+            // No DB record yet — create it
+            const avatarUrl = `${appwriteConfig.endpoint}/avatars/initials?name=${encodeURIComponent(
+                currentAccount.name || "User"
+            )}`;
+
+            return await syncUserWithDB({
+                accountId: currentAccount.$id,
+                email: currentAccount.email,
+                name: currentAccount.name,
+                avatar: avatarUrl,
+                provider: "email-password",
+            });
+        }
 
         return currentUser.documents[0];
     } catch (e: any) {
@@ -320,7 +346,10 @@ export const getMenuItemById = async (itemId: string): Promise<MenuItem | null> 
                 console.warn("⚠️ Failed to fetch category:", err);
             }
         }
-        return response;
+        return {
+            ...response,
+            itemPrice: response.itemPrice ?? response.price ?? 0
+        };
     } catch (error) {
         console.error('Failed to fetch menu item by id', error);
         return null;
@@ -415,3 +444,145 @@ export const getOfferCategories = async (offersId: string): Promise<{
         return [];
     }
 }
+
+// Create a Saved Board
+export const createBoard = async (payload: SavedBoardPayload): Promise<Board> => {
+    // console.log("DB-save ID:", appwriteConfig.databaseId);
+
+    try {
+        const currentUser = useAuthStore.getState().user;
+        if (!currentUser) throw new Error('User not logged in');
+
+        const userId = currentUser.accountId;
+
+        // console.log("Creating board with payload:", {
+        //     ...payload,
+        //     userId,
+        // });
+
+        const response = await databases.createDocument<Board>(
+            appwriteConfig.databaseId,
+            appwriteConfig.customizationsBoardsCollectionId!,
+            ID.unique(),
+            {
+                ...payload,
+                userId,
+            },
+        );
+
+        // console.log('Board created', response.$id);
+        return response;
+    } catch (e: any) {
+        console.error('Failed to create board', e.message);
+        throw new Error('Unable to create board');
+    }
+}
+
+// Get all boards by user (filter by itemId)
+export async function getBoardsForItem(itemId?: string): Promise<Board[]> {
+    return getBoardsByUser(itemId)
+}
+
+// Fetch all boards for the user (optionally filtered by itemId)
+export const getBoardsByUser = async (
+    itemId?: string
+): Promise<(Board & { parsedCustomizations: CartCustomization[] })[]> => {
+    try {
+        const currentUser = useAuthStore.getState().user;
+        if (!currentUser) throw new Error("Not logged in");
+
+        const userId = currentUser.accountId;
+
+        const queries = [Query.equal("userId", userId)];
+        if (itemId) queries.push(Query.equal("itemId", itemId));
+
+        const response = await databases.listDocuments<Board>(
+            appwriteConfig.databaseId,
+            appwriteConfig.customizationsBoardsCollectionId!,
+            queries
+        );
+
+        return response.documents.map((board) => {
+            let parsed: CartCustomization[] = [];
+            try {
+                parsed = typeof board.customizations === "string"
+                    ? JSON.parse(board.customizations)
+                    : board.customizations ?? [];
+            } catch (err) {
+                console.warn("Failed to parse board customizations:", err);
+            }
+
+            return {
+                ...board,
+                parsedCustomizations: parsed,
+            };
+        });
+    } catch (err: any) {
+        console.error("Failed to fetch boards:", err.message);
+        return [];
+    }
+};
+
+export const useBoard = async (board: Board) => {
+    try {
+        const useBoard = await databases.updateDocument<Board>(
+            appwriteConfig.databaseId,
+            appwriteConfig.customizationsBoardsCollectionId!,
+            board.$id,
+            {
+                lastUsedAt: new Date().toISOString()
+            }
+        );
+
+        return useBoard;
+    } catch (err) {
+        console.error("Failed to mark board as used:", err);
+        throw err;
+    }
+};
+
+export const updateBoard = async (boardId: string, payload: SavedBoardPayload): Promise<Board> => {
+    try {
+        const currentUser = useAuthStore.getState().user;
+        const response = await databases.updateDocument<Board>(
+            appwriteConfig.databaseId,
+            appwriteConfig.customizationsBoardsCollectionId!,
+            boardId,
+            {
+                ...payload,
+                userId: currentUser?.accountId,
+            }
+        );
+
+        // console.log("Board updated:", response.$id);
+        return response;
+    } catch (e: any) {
+        console.error("Failed to update board:", e.message);
+        throw new Error("Unable to update board");
+    }
+};
+
+
+// Deactivate a board
+export const deactivateBoard = async (boardId: string): Promise<Board> => {
+    try {
+        const currentUser = useAuthStore.getState().user;
+
+        const response = await databases.updateDocument<Board>(
+            appwriteConfig.databaseId,
+            appwriteConfig.customizationsBoardsCollectionId!,
+            boardId,
+            {
+                isActive: false,
+                archived: true,
+                userId: currentUser?.accountId,
+            }
+        );
+
+        console.log("Board deactivated:", response.$id);
+        return response;
+    } catch (e: any) {
+        console.error("Failed to deactivate board:", e.message);
+        throw new Error("Unable to deactivate board");
+    }
+};

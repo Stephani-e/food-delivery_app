@@ -1,11 +1,11 @@
 import {Alert, Text, View} from 'react-native'
 import React, {useState} from 'react'
 import {Link, router} from "expo-router";
-import CustomInput from "@/components/CustomInput";
-import CustomButton from "@/components/CustomButton";
+import CustomInput from "@/components/Reusable&Custom/CustomInput";
+import CustomButton from "@/components/Buttons/CustomButton";
 import {validateForm} from "@/utils/validateForm";
 import {goggleLogin, signIn, toUser} from "@/lib/appwrite";
-import CustomGoogleButton from "@/components/CustomGoogleButton";
+import CustomGoogleButton from "@/components/Buttons/CustomGoogleButton";
 import useAuthStore from "@/store/auth.store";
 import * as Sentry from '@sentry/react-native'
 
@@ -29,8 +29,9 @@ const SignIn = () => {
             if (user) {
                 useAuthStore.getState().setUser(toUser(user));
                 useAuthStore.getState().setIsAuthenticated(true);
+
                 Alert.alert("Success", "Sign In Success");
-                router.replace('/')
+                router.replace('/(tabs)')
             }
         } catch (error: any) {
             Alert.alert("Error", error.message)
@@ -92,14 +93,14 @@ const SignIn = () => {
                 onPress={handleGoogleLogin}
             />
 
-            <View className="flex justify-center mt-5 flex-row gap-2">
-                <Text className="base-regular text-gray-100">Don't have an account?</Text>
-                <Link
-                    href="/sign-up"
-                    className="base-gold text-primary"
+            <View className="flex-row justify-center mt-5">
+                <Text className="base-regular text-gray-100">Don't have an account?{' '}</Text>
+                <Text
+                    onPress={() => router.push('/sign-up')}
+                    className="base-bold text-primary"
                 >
                     Sign Up
-                </Link>
+                </Text>
             </View>
         </View>
     )

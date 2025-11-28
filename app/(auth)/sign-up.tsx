@@ -1,11 +1,11 @@
 import {Alert, Text, View} from 'react-native'
 import React, {useState} from 'react'
 import {Link, router} from "expo-router";
-import CustomInput from "@/components/CustomInput";
-import CustomButton from "@/components/CustomButton";
+import CustomInput from "@/components/Reusable&Custom/CustomInput";
+import CustomButton from "@/components/Buttons/CustomButton";
 import {validateForm} from "@/utils/validateForm";
 import {createUser, goggleLogin, toUser} from "@/lib/appwrite";
-import CustomGoogleButton from "@/components/CustomGoogleButton";
+import CustomGoogleButton from "@/components/Buttons/CustomGoogleButton";
 import useAuthStore from "@/store/auth.store";
 import * as Sentry from "@sentry/react-native";
 
@@ -102,7 +102,7 @@ const SignUp = () => {
                 <Text className="base-regular text-gray-100">Already have an account?</Text>
                 <Link
                     href="/sign-in"
-                    className="base-gold text-primary"
+                    className="base-bold text-primary"
                 >
                     Sign In
                 </Link>

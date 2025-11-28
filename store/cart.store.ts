@@ -1,249 +1,315 @@
-import { CartCustomization, CartStore } from "@/type";
 import { create } from "zustand";
 import useAuthStore from "@/store/auth.store";
 import { CartService } from "@/lib/cartService";
-import {appwriteConfig, client} from "@/lib/appwrite";
+import { client } from "@/lib/appwrite";
+import { appwriteConfig } from "@/lib/appwriteConfig";
+import {CartCustomization, CartItemType, CartStore} from "@/type";
 
-function areCustomizationsEqual(
-    a: CartCustomization[] = [],
-    b: CartCustomization[] = []
-): boolean {
-    if (a.length !== b.length) return false;
-
-    const aSorted = [...a].sort((x, y) => x.id.localeCompare(y.id));
-    const bSorted = [...b].sort((x, y) => x.id.localeCompare(y.id));
-
-    return aSorted.every((item, idx) => item.id === bSorted[idx].id);
+// Type guard
+function isCartPayload(payload: unknown): payload is { user_id: string } {
+    return typeof payload === "object" && payload !== null && "user_id" in payload && typeof (payload as any).user_id === "string";
 }
+
+// Generate a unique key for each cart item + customizations
+export const generateCartItemKey = (itemId: string, customizations: CartCustomization[] = []) => {
+    if (!customizations || customizations.length === 0) return itemId;
+    const sortedIds = customizations.map(c => `${c.id}:${c.quantity ?? 1}`).sort().join("|");
+    return `${itemId}_${sortedIds}`;
+};
+
+let hasSubscribed = false;
+const lastUpdateRef = { current: 0 };
 
 export const useCartStore = create<CartStore>((set, get) => ({
     items: [],
+    preview: null,
 
-    async loadCartFromServer() {
-        const user = useAuthStore.getState().user;
-        if (!user) return;
+    setPreview: (preview) => {
+        set((state) => ({
+            preview: typeof preview === "function" ? preview(state.preview ?? null) : preview,
+        }));
+    },
 
-        const docs = await CartService.getUserCart(user.$id);
+    updatePreview: (updates) => {
+        const current = get().preview;
+        if (!current) return;
         set({
-            items: docs.map((d: any) => ({
-                id: d.product_id,
-                name: d.product_name,
-                price: d.price,
-                quantity: d.quantity,
-                note: d.note,
-                image_url: d.image_url,
-                is_checked_out: d.is_checked_out,
-                customizations: (() => {
-                    try {
-                        return d.customizations ? JSON.parse(d.customizations) : []
-                    } catch {
-                        return [];
-                    }
-                })(),
-            })),
+            preview: {
+                ...current,
+                ...updates,
+                customizations: updates.customizations ?? current.customizations ?? [],
+            },
         });
     },
 
-    subscribeToCartRealTime() {
+    clearPreview: () => set({ preview: null }),
+
+    // Load cart from Appwrite and merge with local state
+    async loadCartFromServer() {
+        const user = useAuthStore.getState().user?.$id;
+        if (!user) return;
+
+        const docs = await CartService.getUserCart(user);
+        console.log("Fetched cart docs:", docs); // 🔹
+
+        const newItems = docs.map(d => {
+            const customizations = typeof d.customizations === "string" ? JSON.parse(d.customizations) : d.customizations ?? [];
+            const itemId = d.product_id;
+            return {
+                id: itemId,
+                name: d.product_name,
+                basePrice: d.itemPrice,
+                quantity: d.quantity ?? 1,
+                note: d.note,
+                image_url: d.image_url,
+                is_checked_out: d.is_checked_out,
+                customizations,
+                extrasTotal: d.extrasTotal ?? 0,
+                totalPrice: d.total ?? (d.itemPrice + (d.extrasTotal ?? 0)),
+                key: generateCartItemKey(itemId, customizations),
+                cartId: d.$id,
+            };
+        });
+
+        set((state) => {
+            const merged = [...state.items];
+            newItems.forEach(newItem => {
+                const idx = merged.findIndex(i => i.key === newItem.key);
+                if (idx > -1) merged[idx] = newItem; // update existing
+                else merged.push(newItem); // add new
+            });
+            return { items: merged };
+        });
+    },
+
+     subscribeToCartRealTime: () => {
+        if (hasSubscribed) return;
+        hasSubscribed = true;
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
         const subscription = client.subscribe(
             [`databases.${appwriteConfig.databaseId}.collections.${appwriteConfig.cartCollectionId}.documents`],
-            (response) => {
-                const { events, payload } = response;
+            async (response) => {
+                const now = Date.now();
+                if (now - lastUpdateRef.current < 500) return;
+                lastUpdateRef.current = now;
 
-                //Only listen for this user's cart
+                const { events, payload } = response;
+                if (!isCartPayload(payload)) return;
                 if (payload.user_id !== user.$id) return;
 
-                //Handle creates, updates, deletes
-                if (
-                    events.includes('databases.*.collections.*.documents.*.create') ||
-                    events.includes('databases.*.collections.*.documents.*.update') ||
-                    events.includes('databases.*.collections.*.documents.*.delete')
-                ) {
-                    console.log('Tealtime Cart Update Detected');
-                    get().loadCartFromServer();
+                if (events.some(e => e.match(/documents\..*(create|update|delete)/))) {
+                    console.log("Realtime Cart Update Detected");
+                    await get().loadCartFromServer();
                 }
             }
         );
 
-        return () => subscription;
+        return () => subscription();
     },
 
-    addItem: async (item) => {
-        const user = useAuthStore.getState().user;
-        const customizations = item.customizations ?? [];
+    addItem: async (item: CartItemType) => {
+        const key = generateCartItemKey(item.id, item.customizations ?? []);
+        const existing = get().items.find(i => i.key === key);
 
-        const existing = get().items.find(
-            (i) =>
-                i.id === item.id &&
-                areCustomizationsEqual(i.customizations ?? [],
-                    customizations
-                )
-        );
+        const extrasTotal = item.customizations?.reduce(
+            (sum, c) => sum + (c.price || 0) * (c.quantity || 1),
+            0
+        ) ?? 0;
+
+        const totalPrice = ((item.basePrice ?? 0) + extrasTotal) * ((item.quantity ?? 1));
 
         if (existing) {
+            // Item already exists, just increase quantity
+            const newQty = (existing.quantity ?? 1) + 1;
+
             set({
-                items: get().items.map((i) =>
-                    i.id === item.id &&
-                    areCustomizationsEqual(i.customizations ?? [], customizations)
-                        ? { ...i, quantity: i.quantity + 1 }
+                items: get().items.map(i =>
+                    i.key === key
+                        ? {
+                            ...i,
+                            quantity: newQty,
+                            totalPrice: ((i.basePrice ?? 0) + (i.extrasTotal ?? 0)) * newQty
+                        }
                         : i
-                ),
+                )
             });
-        } else {
-            set({
-                items: [...get().items, { ...item, quantity: 1, customizations }],
-            });
-        }
 
-        //Send to Appwrite (only if logged in)
-        if (user) {
-            try {
-                console.log("🧩 Adding item to Appwrite:", item);
-                await CartService.addOrUpdateItem(user.$id, item, customizations);
-                console.log('Cart item added to Appwrite, for:', item.name);
-            } catch (error) {
-                console.log('Error adding cart item to Appwrite:', error);
-            }
-        }
-    },
-
-    removeItem: async (id, customizations = []) => {
-        const user = useAuthStore.getState().user;
-
-        //Update Locally
-        set({
-            items: get().items.filter(
-                (i) =>
-                    !(
-                        i.id === id &&
-                        areCustomizationsEqual(i.customizations ?? [],
-                            customizations
-                        )
-                    )
-            ),
-        });
-
-        //Update Appwrite
-        if (user) {
-            try {
-                const docs = await CartService.getUserCart(user.$id);
-                const target = docs.find(
-                    (d: any) =>
-                        d.product_id === id &&
-                        areCustomizationsEqual(
-                            d.customizations ? JSON.parse(d.customizations) : [],
-                            customizations
-                        )
-                );
-                set({
-                    items: get().items.filter((i) => i.id !== id) });
-                if (target) {
-                    await CartService.removeItem(target.$id)
-                    console.log('Cart item removed from Appwrite, for:', name);
+            // Update Appwrite if cartId exists
+            if (existing.cartId) {
+                try {
+                    await CartService.updateItemQuantity(existing.cartId, newQty);
+                } catch (err) {
+                    console.error("Failed to update quantity in Appwrite:", err);
                 }
-            } catch (error) {
-                console.log('Error removing cart item from Appwrite:', error);
             }
+
+            return;
+        }
+
+        // New item — add to local store
+        const newItem: CartItemType = {
+            ...item,
+            key,
+            quantity: item.quantity ?? 1,
+            extrasTotal,
+            totalPrice,
+        };
+
+        set({ items: [...get().items, newItem] });
+
+        // Add to Appwrite
+        const userId = useAuthStore.getState().user?.$id;
+        if (!userId) return;
+
+        try {
+            const doc = await CartService.addOrUpdateItem(
+                userId,
+                item,
+                item.customizations ?? [],
+                extrasTotal,
+                totalPrice
+            );
+
+            // Assign the Appwrite cartId if available
+            if (doc?.$id) {
+                set({
+                    items: get().items.map(i =>
+                        i.key === key ? { ...i, cartId: doc.$id } : i
+                    )
+                });
+            }
+        } catch (err) {
+            console.error("Failed to add item to Appwrite:", err);
         }
     },
 
-    increaseQty: async (id, customizations = []) => {
-        const user = useAuthStore.getState().user;
-        const item = get().items.find(
-            (i) =>
-                i.id === id &&
-                areCustomizationsEqual(i.customizations ?? [], customizations)
-        );
+    removeItem: async (id: string, customizations: CartCustomization[] = []) => {
+        const key = generateCartItemKey(id, customizations);
+        const item = get().items.find(i => i.key === key);
         if (!item) return;
 
-        const newQty = item.quantity + 1;
+        set({
+            items: get().items.filter(i => i.key !== key),
+        });
+
+        //Remove from Appwrite
+        if (item?.cartId) {
+            try {
+                await CartService.removeItem(item.cartId);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // const user = useAuthStore.getState().user;
+        // if (user) {
+        //     try {
+        //         const docs = await CartService.getUserCart(user.accountId);
+        //         const target = docs.find(d => generateCartItemKey(d.product_id, d.customizations ? JSON.parse(d.customizations) : []) === key);
+        //         if (target) await CartService.removeItem(target.$id);
+        //     } catch (err) {
+        //         console.error(err);
+        //     }
+        // }
+    },
+
+    increaseQty: async (id: string, customizations: CartCustomization[] = []) => {
+        const key = generateCartItemKey(id, customizations);
+        const item = get().items.find(i => i.key === key);
+        if (!item) return;
+
+        const newQty = (item.quantity ?? 1) + 1;
 
         set({
-            items: get().items.map((i) =>
-                i.id === id &&
-                areCustomizationsEqual(i.customizations ?? [], customizations)
-                    ? { ...i, quantity: newQty }
+            items: get().items.map(i =>
+                i.key === key
+                    ? {
+                         ...i,
+                        quantity: newQty,
+                        totalPrice: ((i.basePrice ?? 0)+ (i.extrasTotal ?? 0)) * newQty
+                    }
+                    : i
+            )
+        });
+
+        if (item.cartId) {
+            try {
+                await CartService.updateItemQuantity(item.cartId, newQty);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    },
+
+    decreaseQty: async (id: string, customizations: CartCustomization[] = []) => {
+        const key = generateCartItemKey(id, customizations);
+        const item = get().items.find(i => i.key === key);
+        if (!item) return;
+
+        const newQty = (item.quantity ?? 1) - 1;
+
+        if (newQty <= 0) {
+            // Remove locally
+            set({ items: get().items.filter(i => i.key !== key) });
+
+            // Remove from Appwrite if cartId exists
+            if (item.cartId) {
+                try {
+                    await CartService.removeItem(item.cartId);
+                } catch (err) {
+                    console.error("Failed to remove item from Appwrite:", err);
+                }
+            }
+            return;
+        }
+
+        // Decrease quantity locally
+        set({
+            items: get().items.map(i =>
+                i.key === key
+                    ? {
+                        ...i,
+                        quantity: newQty,
+                        totalPrice: ((i.basePrice ?? 0) + (i.extrasTotal ?? 0)) * newQty,
+                    }
                     : i
             ),
         });
 
-        if (user) {
-            const docs = await CartService.getUserCart(user.$id);
-            const target = docs.find(
-                (d: any) =>
-                    d.product_id === id &&
-                    areCustomizationsEqual(
-                        d.customizations ? JSON.parse(d.customizations) : [],
-                        customizations
-                    )
-            );
-            if (target) await CartService.updateItemQuantity(target.$id, newQty)
-        }
-    },
-
-    decreaseQty: async (id, customizations = []) => {
-        const user = useAuthStore.getState().user;
-        const item = get().items.find(
-            (i) =>
-                i.id && areCustomizationsEqual(i.customizations ?? [], customizations)
-        );
-        if (!item) return;
-
-        const newQty = item.quantity - 1;
-
-        set({
-            items: get()
-                .items.map((i) =>
-                    i.id === id &&
-                    areCustomizationsEqual(i.customizations ?? [], customizations)
-                        ? { ...i, quantity: newQty}
-                        : i
-                )
-                .filter((i) => i.quantity > 0),
-        });
-
-        if (user) {
-            const docs = await CartService.getUserCart(user.$id);
-            const target = docs.find(
-                (d: any) =>
-                    d.product_id === id &&
-                    areCustomizationsEqual(
-                        d.customizations ? JSON.parse(d.customizations) : [],
-                        customizations
-                    )
-            );
-            if (target) await CartService.updateItemQuantity(target.$id, newQty)
+        // Update Appwrite if cartId exists
+        if (item.cartId) {
+            try {
+                await CartService.updateItemQuantity(item.cartId, newQty);
+            } catch (err) {
+                console.error("Failed to update quantity in Appwrite:", err);
+            }
         }
     },
 
     clearCart: async () => {
         const user = useAuthStore.getState().user;
+        const cartStore = useCartStore.getState();
+        const itemsToDelete = cartStore.items.filter(i => i.cartId);
 
-        //clear locally
-        set({items: []})
-        if (user) {
+        for (const item of itemsToDelete) {
             try {
-                await CartService.clearCart(user.$id)
-            } catch (error) {
-                console.error('Error Clearing Cart:', error)
+                await CartService.removeItem(item.cartId!);
+            } catch (err) {
+                console.error(err);
             }
         }
+
+        set({ items: [] });
     },
 
-    getTotalItems: () =>
-        get().items.reduce((total, item) => total + item.quantity, 0),
+    getTotalItems: () => get().items.reduce((total, item) => total + (item.quantity ?? 0), 0),
 
-    getTotalPrice: () =>
-        get().items.reduce((total, item) => {
-            const base = item.price;
-            const customPrice =
-                item.customizations?.reduce(
-                    (s: number, c: CartCustomization) => s + c.price,
-                    0
-                ) ?? 0;
-            return total + item.quantity * (base + customPrice);
-        }, 0),
+    getTotalPrice: () => get().items.reduce((total, item) => {
+        const base = item.basePrice;
+        const customPrice = item.customizations?.reduce((sum, c) => sum + c.price, 0) ?? 0;
+        return total + (item.quantity ?? 0) * (base + customPrice);
+    }, 0),
 }));

@@ -2,7 +2,7 @@ import {FlatList, Image, Pressable, Text, TouchableOpacity, View} from "react-na
 import {images} from "@/constants";
 import { useRouter } from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
-import CartButton from "@/components/CartButton";
+import CartButton from "@/components/Buttons/CartButton";
 import {Fragment, useEffect, useState} from "react";
 import cn from 'clsx'
 import useAuthStore from "@/store/auth.store";

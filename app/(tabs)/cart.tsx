@@ -1,12 +1,12 @@
 import {FlatList, Text, View} from 'react-native'
-import {useCartStore} from "@/store/cart.store";
+import {generateCartItemKey, useCartStore} from "@/store/cart.store";
 import {SafeAreaView} from "react-native-safe-area-context";
-import CustomHeader from "@/components/CustomHeader";
+import CustomHeader from "@/components/Reusable&Custom/CustomHeader";
 import cn from "clsx";
 import {PaymentInfoStripeProps} from "@/type";
-import CustomButton from "@/components/CustomButton";
-import CartItem from "@/components/CartItem";
-import EmptyState from "@/components/EmptyState";
+import CustomButton from "@/components/Buttons/CustomButton";
+import CartItem from "@/components/Cards/CartItem";
+import EmptyState from "@/components/Functions/EmptyState";
 import {useEffect} from "react";
 
 const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfoStripeProps) => (
@@ -21,14 +21,18 @@ const PaymentInfoStripe = ({ label, value, labelStyle, valueStyle }: PaymentInfo
 )
 
 const Cart = () => {
-    const { items, getTotalItems, getTotalPrice, clearCart } = useCartStore();
+    const { items, getTotalItems, getTotalPrice, clearCart, } = useCartStore();
 
     const totalItems = getTotalItems();
     const totalPrice = getTotalPrice();
 
     useEffect(() => {
         const unSubscribe = useCartStore.getState().subscribeToCartRealTime();
-        return () => unSubscribe();
+        return () => {
+            if (typeof unSubscribe === 'function') {
+                unSubscribe()
+            }
+        };
     }, []);
 
     return (
@@ -47,7 +51,7 @@ const Cart = () => {
                 }
                 contentContainerClassName='pb-28 px-5 pt-5'
                 data={items}
-                keyExtractor={item => item.id}
+                keyExtractor={item => generateCartItemKey(item.id, item.customizations || [])}
                 renderItem={({ item }) =>
                     <CartItem item={item} />
                 }

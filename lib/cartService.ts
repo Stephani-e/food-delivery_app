@@ -1,9 +1,20 @@
 import { databases, Query } from "@/lib/appwrite";
-import { appwriteConfig } from "@/lib/appwrite";
+import { appwriteConfig } from "@/lib/appwriteConfig";
 import {ID} from "react-native-appwrite";
+import {mapAppwriteItemToCartItem} from "@/utils/cartUtils";
 
 const dbId = appwriteConfig.databaseId;
 const cartId = appwriteConfig.cartCollectionId;
+
+// Generate a unique key for an item + customizations
+const generateCartKey = (itemId: string, customizations: any[] = []) => {
+    if (!customizations || customizations.length === 0) return itemId;
+    const sorted = customizations
+        .map(c => `${c.id}:${c.quantity ?? 1}`)
+        .sort()
+        .join('|');
+    return `${itemId}_${sorted}`;
+};
 
 export const CartService = {
     async getUserCart(userId: string) {
@@ -12,34 +23,55 @@ export const CartService = {
             Query.equal('is_checked_out', false),
         ]);
         return res.documents;
+        // return res.documents.map(doc => mapAppwriteItemToCartItem(doc, JSON.parse(doc.customizations || '[]')));
     },
 
-    async addOrUpdateItem(userId: string, item: any, customizations: any[]) {
+    async addOrUpdateItem(userId: string, item: any, customizations: any[], extrasTotal: number, totalPrice: number, incrementQty = false): Promise<{ $id: string; key: string}> {
+        const productId = item.$id ?? item.id;
+        if (!productId) throw new Error(`Item must have an ID. Make sure you're passing the item object directly from the store, not a proxy object.`)
+
+        const key = generateCartKey(productId, customizations);
+
+        let docId: string;
+
+        console.log("📝 CartService.addOrUpdateItem called", { userId, itemId: item.$id, customizations, key });
+
         const res = await databases.listDocuments(dbId, cartId, [
             Query.equal('user_id', userId),
-            Query.equal('product_id', item.id),
+            Query.equal('cart_key', key),
             Query.equal('is_checked_out', false),
         ]);
 
         if (res.documents.length > 0) {
             // Item already in cart — increment quantity
             const existing = res.documents[0];
-            await databases.updateDocument(dbId, cartId, existing.$id, {
-                quantity: (existing.quantity ?? 0) + 1,
-            });
+            if (incrementQty) {
+                await databases.updateDocument(dbId, cartId, existing.$id, {
+                    quantity: (existing.quantity ?? 0) + 1,
+                });
+            }
+
+            docId = existing.$id;
         } else {
-            await databases.createDocument(dbId, cartId, ID.unique(), {
+            console.log("➕ Creating new cart item in Appwrite");
+            const newDoc = await databases.createDocument(dbId, cartId, ID.unique(), {
                 user_id: userId,
-                product_id: item.id,
+                product_id: productId,
                 product_name: item.name,
-                price: item.price ?? 0,
-                quantity: item.quantity || 1,
+                itemPrice: item.itemPrice ?? 0,
+                quantity: item.quantity ?? 1,
                 is_checked_out: false,
                 note: item.note || '',
                 image_url: item.image_url || '',
-                customizations: JSON.stringify(item.customizations) ?? [] ,
+                customizations: JSON.stringify(customizations) ?? [] ,
+                cart_key: key,
+                extrasTotal: extrasTotal,
+                total: totalPrice,
             });
+            docId = newDoc.$id;
         }
+
+        return { $id: docId, key };
     },
 
     async updateItemQuantity(cartItemId: string, quantity: number) {

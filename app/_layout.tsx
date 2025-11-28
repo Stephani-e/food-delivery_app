@@ -4,8 +4,9 @@ import {useFonts} from "expo-font";
 import {useEffect} from "react";
 import * as Sentry from '@sentry/react-native';
 import useAuthStore from "@/store/auth.store";
-import SplashScreen from "@/components/SplashScreen";
+import SplashScreen from "@/components/Style/SplashScreen";
 import { useCartStore } from "@/store/cart.store";
+import {account} from "@/lib/appwrite";
 
 Sentry.init({
   dsn: 'https://b8b1c43159ba962d27ece14206596c2e@o4510164534689792.ingest.de.sentry.io/4510164537901136',
@@ -46,24 +47,21 @@ export default Sentry.wrap(function RootLayout() {
     if(fontsLoaded) ExpoSplash.hideAsync();
   }, [fontsLoaded, error]);
 
-  // Fetch user before rendering anything
+  // Fetch user before rendering
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        await fetchAuthenticatedUser(); // await ensures state updates before rendering
-      } catch (err) {
-        console.log("Auth init failed:", err);
-      }
-    };
-    initialize();
+    fetchAuthenticatedUser().catch(err => console.log("Auth fetch failed:", err));
   }, []);
 
-  // Load cart when the user is authenticated
+  // Load cart once user.accountId is ready
   useEffect(() => {
-    if (isAuthenticated && user) {
-      loadCartFromServer();
+    if (isAuthenticated && user?.accountId) {
+     useCartStore.getState().loadCartFromServer()
+         .then(() => {
+           useCartStore.getState().subscribeToCartRealTime();
+         })
+          .catch(err => console.error("Failed to load cart:", err));
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.accountId]);
 
   if (!fontsLoaded) {
     return <SplashScreen message="Loading Fonts..." />

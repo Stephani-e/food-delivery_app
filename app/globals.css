@@ -26,7 +26,11 @@
     }
 
     .cart-item {
-        @apply flex flex-row items-end justify-between mb-4 bg-white rounded-xl p-3 shadow-md shadow-dark-100/10;
+        @apply flex flex-row items-end justify-between mt-4 mb-4 bg-white rounded-xl p-3 shadow-md shadow-dark-100/10;
+    }
+
+    .cart-itemS {
+        @apply flex flex-col items-end justify-between mb-4 bg-white rounded-xl p-3 shadow-md shadow-dark-100/10;
     }
 
     .cart-item__image {
@@ -106,7 +110,7 @@
     }
 
     .base-bold {
-        @apply text-lg font-quicksand-bold !important;
+        @apply text-lg font-quicksand-bold leading-6 !important;
     }
 
     .base-semibold {
@@ -114,7 +118,7 @@
     }
 
     .base-regular {
-        @apply text-lg font-quicksand;
+        @apply text-lg font-quicksand leading-6;
     }
 
     .paragraph-bold {

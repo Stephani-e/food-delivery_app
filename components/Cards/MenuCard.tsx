@@ -1,6 +1,6 @@
 import {Text, TouchableOpacity, Image, Platform} from 'react-native'
 import {MenuItem} from "@/type";
-import {useCartStore} from "@/store/cart.store";
+import {useCartStore, generateCartItemKey} from "@/store/cart.store";
 
 const MenuCard = ({ item: { $id, image_url, name, price }}: {item: MenuItem}) => {
    //console.log("Menu images:", image_url, name)
@@ -22,8 +22,10 @@ const MenuCard = ({ item: { $id, image_url, name, price }}: {item: MenuItem}) =>
                     id: $id,
                     name,
                     image_url,
-                    price,
-                    customizations: []
+                    basePrice: price,
+                    customizations: [],
+                    key: generateCartItemKey($id, []),
+                    cartId: $id,
                 })}
             >
                 <Text className='paragraph-bold text-primary'>Add To Cart +</Text>

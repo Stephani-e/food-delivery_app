@@ -5,7 +5,7 @@ import {TabBarIconProps} from "@/type";
 import {Image, Text, View} from "react-native";
 import {images} from "@/constants";
 import cn from "clsx";
-import SplashScreen from "@/components/SplashScreen";
+import SplashScreen from "@/components/Style/SplashScreen";
 
 const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
     <View className="tab-icon">

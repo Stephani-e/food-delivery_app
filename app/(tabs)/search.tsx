@@ -4,12 +4,12 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import useAppwrite from "@/lib/useAppwrite";
 import {getCategories, getMenu} from "@/lib/appwrite";
 import {useLocalSearchParams} from "expo-router";
-import CartButton from "@/components/CartButton";
+import CartButton from "@/components/Buttons/CartButton";
 import cn from "clsx";
-import MenuCard from "@/components/MenuCard";
-import Filter from "@/components/Filter";
-import SearchBar from "@/components/SearchBar";
-import EmptyState from "@/components/EmptyState";
+import MenuCard from "@/components/Cards/MenuCard";
+import Filter from "@/components/Functions/Filter";
+import SearchBar from "@/components/Functions/SearchBar";
+import EmptyState from "@/components/Functions/EmptyState";
 
 const Search = () => {
     const { category, query } = useLocalSearchParams<{query: string; category: string}>()

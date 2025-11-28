@@ -1,15 +1,20 @@
 import { Models } from "react-native-appwrite";
 
+export type CategoryRef = {
+    $id: string;
+    name: string;
+};
+
 export interface MenuItem extends Models.Document {
     name: string;
-    price: number;
+    itemPrice: number;
     image_url: string;
     description: string;
     availability: boolean;
     calories: number;
     protein: number;
     rating: number;
-    categories: string | { $id: string, name: string };
+    categories: string | CategoryRef;
     type: string;
     avgRating?: number;
     reviewCount?: number;
@@ -38,17 +43,15 @@ export interface Offer {
 }
 
 export interface User extends Models.Document {
+    accountId: string;
     name: string;
     email: string;
     avatar: string;
     provider: string[];
 }
 
-export interface CartCustomization {
-    id: string;
-    name: string;
-    price: number;
-    type: string;
+export interface CartCustomization extends CustomizationDraft{
+    $id?: string;
 }
 
 export interface Customization extends Models.Document {
@@ -58,33 +61,98 @@ export interface Customization extends Models.Document {
     image_url?: string;
 }
 
+export interface CustomizationDraft {
+    id?: string;
+    name: string;
+    price: number;
+    quantity: number;
+    type: "topping" | "side" | "extra" | string;
+    image_url?: string;
+}
+
 export interface MenuCustomization extends Models.Document {
     menu: string;
     customizations: Customization;
 }
 
-
 export interface CartItemType {
     id: string; // menu item id
+    cartId?: string;
+    key?: string;
     name: string;
-    price: number;
+    basePrice: number;
     image_url: string;
-    quantity: number;
+    quantity?: number;
+    note?: string;
     customizations?: CartCustomization[];
+    totalPrice?: number;
+    extrasTotal?: number;
+    is_checked_out?: boolean;
+}
+
+export interface PreviewState extends Omit<CartItemType, "customizations"> {
+    customizations?: CartCustomization[];
+    totalPrice?: number;
 }
 
 export interface CartStore {
     items: CartItemType[];
 
-    loadCartFromServer: () => Promise<void>;
+    preview?: PreviewState | null;
 
-    addItem: (item: Omit<CartItemType, "quantity">) => void;
+    setPreview: (
+        preview:
+            PreviewState |
+            ((prev: PreviewState | null) => PreviewState | null)
+    ) => void;
+    updatePreview: (updates: Partial<PreviewState>) => void;
+    clearPreview: () => void;
+
+    loadCartFromServer: () => Promise<void>;
+    subscribeToCartRealTime: () => (() => void) | void;
+
+    addItem: (item: CartItemType) => void;
     removeItem: (id: string, customizations: CartCustomization[]) => void;
     increaseQty: (id: string, customizations: CartCustomization[]) => void;
     decreaseQty: (id: string, customizations: CartCustomization[]) => void;
     clearCart: () => void;
     getTotalItems: () => number;
     getTotalPrice: () => number;
+}
+
+export interface BoardItem {
+    id: string;
+    name: string;
+    price: number;
+    quantity?: number;
+    type: "topping" | "side" | "extra" | string;
+    image_url?: string;
+}
+
+export interface Board extends Models.Document {
+    $id: string;
+    userId: string;
+    itemId: string;
+    name?: string;
+    customizations: string;
+    extrasTotal?: number;
+    itemName?: string;
+    itemImage?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    isActive?: boolean;
+    archived?: string;
+}
+
+export type SavedBoardPayload = {
+    $id?: string;
+    itemId: string;
+    userId: string;
+    name?: string;
+    customizations: string;
+    extrasTotal: number;
+    itemName?: string;
+    itemImage?: string;
 }
 
 interface TabBarIconProps {

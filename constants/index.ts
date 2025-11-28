@@ -20,6 +20,9 @@ import trash from "@/assets/icons/trash.png";
 import user from "@/assets/icons/user.png";
 import google from "@/assets/icons/google.png"
 
+import existing from '@/assets/images/existing.png';
+import add from '@/assets/images/add.png';
+import equal from '@/assets/images/equal.png'
 import clearCart from "@/assets/images/clear.png";
 import avatar from "@/assets/images/avatar.png";
 import avocado from "@/assets/images/avocado.png";
@@ -226,5 +229,8 @@ export const images = {
     trash,
     user,
     google,
-    clearCart
+    clearCart,
+    existing,
+    add,
+    equal,
 };

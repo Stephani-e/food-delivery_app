@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Offer, Category } from "@/type";
 import {getOfferCategories, getOffers} from "@/lib/appwrite";
 import { LinearGradient } from 'expo-linear-gradient';
-import PatternBackground from "@/components/PatternBackground";
+import PatternBackground from "@/components/Style/PatternBackground";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
