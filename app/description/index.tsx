@@ -231,7 +231,7 @@ export default function OfferDescription() {
                                                     <Text style={{
                                                         color: "#999",
                                                         fontSize: 13
-                                                    }}>${food.price}</Text>
+                                                    }}>${food.itemPrice}</Text>
                                                 </View>
                                             </TouchableOpacity>
                                         )) : (

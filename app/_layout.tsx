@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react-native';
 import useAuthStore from "@/store/auth.store";
 import SplashScreen from "@/components/Style/SplashScreen";
 import { useCartStore } from "@/store/cart.store";
-import {account} from "@/lib/appwrite";
+import { detectLocation } from "@/lib/location/location";
 
 Sentry.init({
   dsn: 'https://b8b1c43159ba962d27ece14206596c2e@o4510164534689792.ingest.de.sentry.io/4510164537901136',
@@ -45,6 +45,7 @@ export default Sentry.wrap(function RootLayout() {
   useEffect(() => {
     if(error) throw error;
     if(fontsLoaded) ExpoSplash.hideAsync();
+    detectLocation('country-only');
   }, [fontsLoaded, error]);
 
   // Fetch user before rendering

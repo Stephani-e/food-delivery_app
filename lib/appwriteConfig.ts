@@ -13,4 +13,5 @@ export const appwriteConfig = {
     reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_ID!,
     cartCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CART_ID!,
     customizationsBoardsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CUSTOMIZATIONS_BOARD_ID,
+    restaurantCollectionId: process.env.EXPO_PUBLIC_APPWRITE_RESTAURANT_ID!,
 };

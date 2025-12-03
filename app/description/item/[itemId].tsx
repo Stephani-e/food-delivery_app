@@ -186,7 +186,7 @@ export default function ItemId() {
                         </View>
 
                         {/* Price */}
-                        <Text style={{fontWeight: "bold", color: "#F89D3A", fontSize: 22, marginLeft: 22, marginTop: 7}}>${(item.price ?? 0).toFixed(2) } </Text>
+                        <Text style={{fontWeight: "bold", color: "#F89D3A", fontSize: 22, marginLeft: 22, marginTop: 7}}>${(item.itemPrice ?? 0).toFixed(2) } </Text>
 
                         {/* Nutrition Info */}
                         <View style={{flexDirection: "row", marginLeft: 22, marginTop: 8, marginBottom: 12}}>
@@ -485,7 +485,7 @@ export default function ItemId() {
                                 const customizations: CartCustomization[] = safeParseCustomizations(board.customizations);
                                 const extrasTotal = Number(board.extrasTotal ?? 0);
                                 const price = (item.itemPrice ?? 0);
-                                const total = (item.price ?? 0) + (extrasTotal ?? 0);
+                                const total = (item.itemPrice ?? 0) + (extrasTotal ?? 0);
 
                                 return (
                                     <View
@@ -745,7 +745,7 @@ export default function ItemId() {
                                 style={{ backgroundColor: boards.some(b => b.isActive) ? "#F89D3A" : "#ccc", borderRadius: 11, paddingVertical: 14, alignItems: "center", marginTop: 10 }}
                             >
                                 <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-                                    Add All to Order (${boards.reduce((acc, b) => b.isActive ? acc + ((b.extrasTotal || 0) + (item.price ?? 0)) : acc, 0).toFixed(2)})
+                                    Add All to Order (${boards.reduce((acc, b) => b.isActive ? acc + ((b.extrasTotal || 0) + (item.itemPrice ?? 0)) : acc, 0).toFixed(2)})
                                 </Text>
                             </TouchableOpacity>
                         </ScrollView>

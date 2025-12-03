@@ -141,7 +141,8 @@ export interface Board extends Models.Document {
     createdAt?: string;
     updatedAt?: string;
     isActive?: boolean;
-    archived?: string;
+    archived?: boolean;
+    lastUsedAt?: string;
 }
 
 export type SavedBoardPayload = {

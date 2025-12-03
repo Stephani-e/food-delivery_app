@@ -348,7 +348,7 @@ export const getMenuItemById = async (itemId: string): Promise<MenuItem | null> 
         }
         return {
             ...response,
-            itemPrice: response.itemPrice ?? response.price ?? 0
+            itemPrice: response.itemPrice ?? response.itemPrice ?? 0
         };
     } catch (error) {
         console.error('Failed to fetch menu item by id', error);
@@ -403,7 +403,7 @@ export const getOffers = async (): Promise<Offer[]> => {
             [
                 Query.limit(100),
                 Query.equal('isActive', true),
-                Query.orderAsc('$createdAt')
+                Query.orderAsc('$createdAt'),
             ]
         );
 
@@ -413,6 +413,54 @@ export const getOffers = async (): Promise<Offer[]> => {
         throw new Error('Unable to Fetch offers from appwrite');
     }
 }
+
+export const getOffersByUserLocation = async (userCountry: string, userCity?: string) => {
+    try {
+        const response = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.offersCollectionId,
+            [
+                Query.equal('isActive', true),
+                Query.select(['*', 'restaurants.*'])
+            ]
+        );
+
+        const deliverableOffers = response.documents
+            .filter(offer => {
+                return offer.restaurants.some((r: any) =>
+                    r.isActive && r.country === userCountry
+                )
+            })
+            .map((doc: any) => ({
+                ...doc,
+                title: doc.title as string,
+                color: doc.color as string,
+                image_url: doc.image_url as string,
+                isActive: doc.isActive as boolean,
+                categories: doc.categories,
+                description: doc.description,
+                $id: doc.$id,
+            }));
+        console.log('Offer + Restaurant fetched:', JSON.stringify(response.documents[0]))
+        return deliverableOffers;
+    } catch (error) {
+        console.error('Error Fetching Offers By Location', error);
+        throw new Error('Unable to Fetch location from appwrite');
+    }
+}
+
+export const getBranchesByLocation = async (country: string) => {
+    const res = await databases.listDocuments(
+        appwriteConfig.databaseId,
+        appwriteConfig.restaurantCollectionId,
+        [
+            Query.equal("isActive", true),
+            Query.equal("country", country),
+        ]
+    );
+    
+    return res.documents ?? [];
+};
 
 export const getOfferCategories = async (offersId: string): Promise<{
     $id: string;
