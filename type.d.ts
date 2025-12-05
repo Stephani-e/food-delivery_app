@@ -95,10 +95,20 @@ export interface PreviewState extends Omit<CartItemType, "customizations"> {
     totalPrice?: number;
 }
 
+export type CartMeta = {
+    branchId?: string;
+    branchName?: string;
+    country?: string;
+}
+
 export interface CartStore {
     items: CartItemType[];
 
     preview?: PreviewState | null;
+
+    cartMeta?: CartMeta;
+    setCartMeta: (meta: CartMeta) => void;
+    clearCartMeta: () => void;
 
     setPreview: (
         preview:

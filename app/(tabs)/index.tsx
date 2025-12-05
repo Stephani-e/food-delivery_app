@@ -14,6 +14,7 @@ import {selectBestBranch} from "@/lib/location/selectBranch";
 import {haversineKm} from "@/lib/location/distance";
 import {Ionicons} from "@expo/vector-icons";
 import FloatingLocationButton from "@/components/Buttons/FloatingLocationButton";
+import {useCartStore} from "@/store/cart.store";
 
 export default function Index() {
     const { user } = useAuthStore();
@@ -83,6 +84,13 @@ export default function Index() {
             }
 
             setIsDeliverable(true);
+
+            useCartStore.getState().setCartMeta({
+                branchId: bestBranch.$id,
+                branchName: bestBranch.name,
+                country: bestBranch.country,
+            });
+
 
             const deliverableOffers = result.filter(offer =>
                 offer.restaurants.some(r => r.$id === bestBranch.$id)

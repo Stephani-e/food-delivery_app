@@ -4,6 +4,7 @@ import { CartService } from "@/lib/cartService";
 import { client } from "@/lib/appwrite";
 import { appwriteConfig } from "@/lib/appwriteConfig";
 import {CartCustomization, CartItemType, CartStore} from "@/type";
+import {Alert} from "react-native";
 
 // Type guard
 function isCartPayload(payload: unknown): payload is { user_id: string } {
@@ -21,6 +22,32 @@ let hasSubscribed = false;
 const lastUpdateRef = { current: 0 };
 
 export const useCartStore = create<CartStore>((set, get) => ({
+
+    cartMeta: undefined,
+
+    setCartMeta: async (meta) => {
+        const state = get();
+
+        // If the branch changed, clear cart
+        if (state.cartMeta?.branchId && meta.branchId !== state.cartMeta.branchId) {
+            console.log("Branch changed! Clearing cart items...");
+            Alert.alert(
+                'Branch Changed',
+                'Your Previous Cart Items have been cleared as they may not apply to this branch'
+            )
+            state.clearCart(); // <-- actually removes items from Appwrite
+        }
+
+        set({
+            cartMeta: meta
+        });
+    },
+
+    clearCartMeta: () =>
+        set({
+            cartMeta: undefined,
+        }),
+
     items: [],
     preview: null,
 
@@ -111,6 +138,11 @@ export const useCartStore = create<CartStore>((set, get) => ({
     },
 
     addItem: async (item: CartItemType) => {
+        const { cartMeta } = get();
+        if (!cartMeta?.branchId) {
+            console.warn("No branchId found in cartMeta. Cannot add item to cart.");
+            return;
+        }
         const key = generateCartItemKey(item.id, item.customizations ?? []);
         const existing = get().items.find(i => i.key === key);
 

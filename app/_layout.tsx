@@ -7,6 +7,7 @@ import useAuthStore from "@/store/auth.store";
 import SplashScreen from "@/components/Style/SplashScreen";
 import { useCartStore } from "@/store/cart.store";
 import { detectLocation } from "@/lib/location/location";
+import {useLocationStore} from "@/store/location.store";
 
 Sentry.init({
   dsn: 'https://b8b1c43159ba962d27ece14206596c2e@o4510164534689792.ingest.de.sentry.io/4510164537901136',
@@ -31,10 +32,14 @@ Sentry.init({
 
 
 export default Sentry.wrap(function RootLayout() {
-  const { isLoading, isAuthenticated, user, fetchAuthenticatedUser } = useAuthStore();
-  const { loadCartFromServer } = useCartStore();
 
-  const [fontsLoaded, error] = useFonts({
+  const hydrated = useLocationStore((s) => s.hydrated);
+  const hydrate = useLocationStore((s) => s.hydrate);
+
+  const { isLoading, isAuthenticated, user, fetchAuthenticatedUser } = useAuthStore();
+  useCartStore();
+
+  const [fontsLoaded, fontError] = useFonts({
     "QuickSand-Bold": require('../assets/fonts/Quicksand-Bold.ttf'),
     "QuickSand-Medium": require('../assets/fonts/Quicksand-Medium.ttf'),
     "QuickSand-Regular": require('../assets/fonts/Quicksand-Regular.ttf'),
@@ -42,25 +47,37 @@ export default Sentry.wrap(function RootLayout() {
     "QuickSand-Light": require('../assets/fonts/Quicksand-Light.ttf'),
   });
 
+  //Load Fonts
   useEffect(() => {
-    if(error) throw error;
+    if(fontError) throw fontError;
     if(fontsLoaded) ExpoSplash.hideAsync();
-    detectLocation('country-only');
-  }, [fontsLoaded, error]);
+  }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    hydrate();
+  }, []);
+
+  // detect location
+  useEffect(() => {
+    if (hydrated) {
+      detectLocation('country-only');
+    }
+  }, [hydrated]);
 
   // Fetch user before rendering
   useEffect(() => {
-    fetchAuthenticatedUser().catch(err => console.log("Auth fetch failed:", err));
+    fetchAuthenticatedUser().catch(err =>
+        console.log("Auth fetch failed:", err));
   }, []);
 
   // Load cart once user.accountId is ready
   useEffect(() => {
     if (isAuthenticated && user?.accountId) {
-     useCartStore.getState().loadCartFromServer()
-         .then(() => {
-           useCartStore.getState().subscribeToCartRealTime();
-         })
-          .catch(err => console.error("Failed to load cart:", err));
+     const store  = useCartStore.getState();
+     store
+         .loadCartFromServer()
+         .then(() => store.subscribeToCartRealTime())
+         .catch(err => console.error("Failed to load cart:", err));
     }
   }, [isAuthenticated, user?.accountId]);
 
@@ -68,6 +85,11 @@ export default Sentry.wrap(function RootLayout() {
     return <SplashScreen message="Loading Fonts..." />
   }
 
+  if (!hydrated) {
+    return <SplashScreen message="Loading location..." />;
+  }
+
+// wait for uer to load completely
   if (isLoading) return (
       <SplashScreen
           message="Authenticating User..."
