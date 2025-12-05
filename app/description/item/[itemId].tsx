@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert} from "react-native";
+import {View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Pressable} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {Board, CartCustomization, Customization, MenuItem} from "@/type";
@@ -19,7 +19,6 @@ import CustomizationPicker from "@/components/Reusable&Custom/CustomizationPicke
 import {CartService} from "@/lib/cartService";
 import UseBoardModal from "@/components/Reusable&Custom/UseBoardModal";
 
-
 export default function ItemId() {
     const { user } = useAuthStore()
     const { itemId } = useLocalSearchParams();
@@ -28,6 +27,7 @@ export default function ItemId() {
     //useDebugCart();
     const router = useRouter();
     const { addItem, increaseQty, decreaseQty, items  } = useCartStore();
+    const [ expanded, setExpanded ] = useState(false);
 
     const [item, setItem] = useState<MenuItem | null>(null);
     const [customizations, setCustomizations] = useState<Customization[]>([]);
@@ -67,7 +67,6 @@ export default function ItemId() {
         if(itemId) fetchData();
     }, [itemId]);
 
-
     function safeParseCustomizations(input: any): CartCustomization[] {
         if (!input) return [];
         if (Array.isArray(input)) return input;
@@ -95,7 +94,6 @@ export default function ItemId() {
         image_url: t.image_url,
         quantity: 1, // default to 1 if missing
     }));
-
     const sidesForCart: CartCustomization[] = sides.map(s => ({
         id: s.$id,
         name: s.name,
@@ -117,7 +115,6 @@ export default function ItemId() {
         setShowCustomizeAlert(false)
         setBoardsModalVisible(false)
     };
-
 
     // console.log("toppings:", toppings);
     // console.log("sides:", sides);
@@ -253,13 +250,49 @@ export default function ItemId() {
 
                 {/* Description */}
                 <Text style={{
-                    marginHorizontal: 22, color: "#555", marginBottom: 16,
-                    fontSize: 15, lineHeight: 22
-                }}>{item.description}</Text>
+                    marginHorizontal: 22,
+                    color: "#555",
+                    marginBottom: 6,
+                    fontSize: 15,
+                    lineHeight: 22
+                }}>
+                    {item.description}
+                </Text>
+
+                <View className="w-full my-5 px-5">
+                    <View className="bg-[#FFF6ED] border-l-4 border-[#F89D3A] p-4 rounded-xl shadow-md flex-row items-start">
+
+                        {/* Icon */}
+                        <Ionicons name="information-circle-sharp" size={17} color="#F89D3A" />
+
+                        {/* Message */}
+                        <Pressable
+                            onPress={() => setExpanded(!expanded)}
+                            className="flex-1 ml-3"
+                        >
+                            <Text
+                                className="text-sm text-[#F89D3A]"
+                                numberOfLines={expanded ? undefined : 3}
+                                ellipsizeMode="tail"
+                            >
+                                <Text className="font-semibold">Customizations:</Text> Personalize your meal by adding extra toppings or sides.
+                                <Text className="font-semibold"> Tap to Create a New Board.</Text>
+                                <Text className="font-semibold"> Fun fact:</Text> You can create multiple boards for different orders.
+                            </Text>
+
+                            {/* Tap hint */}
+                            {!expanded && (
+                                <Text className="text-[11px] text-[#F89D3A] mt-1">
+                                    Tap to read more
+                                </Text>
+                            )}
+                        </Pressable>
+                    </View>
+                </View>
 
                 {/* Toppings */}
                 <Text
-                    style={{fontWeight: "700", fontSize: 16, marginLeft: 22, marginBottom: 5}}
+                    style={{fontWeight: "700", fontSize: 16, marginLeft: 22, marginTop: 5, marginBottom: 5}}
                 >
                     Toppings
                 </Text>
@@ -269,7 +302,7 @@ export default function ItemId() {
                             key={top.$id}
                             style={{
                                 width: 74,
-                                height: 90,
+                                height: 100,
                                 backgroundColor: "#fff",
                                 borderRadius: 20,
                                 alignItems: "center",
@@ -297,39 +330,33 @@ export default function ItemId() {
                                 style={{
                                     width: '100%',
                                     backgroundColor: '#2E2E2E',
-                                    borderBottomLeftRadius: 20,
-                                    borderBottomRightRadius: 20,
-                                    flexDirection: 'row',
+                                    borderBottomLeftRadius: 40,
+                                    borderBottomRightRadius: 40,
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 8,
                                     alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    paddingHorizontal: 12,
-                                    paddingVertical: 8
                                 }}
                             >
-                                <Text
-                                    style={{
-                                        color: "#fff",
-                                        fontWeight: "600",
-                                        fontSize: 8,
-                                        maxWidth: 38
-                                    }}
-                                    numberOfLines={1}
-                                    ellipsizeMode='tail'
+                                <Pressable
+                                    onPress={() => setExpanded(!expanded)}
                                 >
+                                    <Text
+                                        style={{
+                                            color: "#fff",
+                                            fontWeight: "600",
+                                            fontSize: 9,
+                                            maxWidth: 85,
+                                            textAlign: 'center'
+                                        }}
+                                        numberOfLines={expanded ? 3 : 1}
+                                        ellipsizeMode='tail'
+                                    >
                                         {top.name}
+                                    </Text>
+                                </Pressable>
+                                <Text style={{ fontSize: 8, color: '#fff' }}>
+                                    ${top.price}
                                 </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: '#F95837',
-                                        borderRadius: 10,
-                                        width: 10,
-                                        height: 10,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <Ionicons name="add" size={7} color="#fff" />
-                                </View>
                             </View>
                         </View>
                     ))}
@@ -347,8 +374,8 @@ export default function ItemId() {
                     {sides.map(side => (
                         <View key={side.$id}
                               style={{
-                                  width: 74,
-                                  height: 90,
+                                  width: 75,
+                                  height: 100,
                                   backgroundColor: "#fff",
                                   borderRadius: 20,
                                   alignItems: "center",
@@ -373,39 +400,33 @@ export default function ItemId() {
                                 style={{
                                     width: '100%',
                                     backgroundColor: '#2E2E2E',
-                                    borderBottomLeftRadius: 20,
-                                    borderBottomRightRadius: 20,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    paddingHorizontal: 12,
-                                    paddingVertical: 8
+                                    borderBottomLeftRadius: 40,
+                                    borderBottomRightRadius: 40,
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 8,
+                                    alignItems: 'center'
                                 }}
                             >
-                                <Text
-                                    style={{
-                                        color: "#fff",
-                                        fontWeight: "600",
-                                        fontSize: 8,
-                                        maxWidth: 38
-                                    }}
-                                    numberOfLines={1}
-                                    ellipsizeMode='tail'
+                                <Pressable
+                                    onPress={() => setExpanded(!expanded)}
                                 >
-                                    {side.name}
+                                    <Text
+                                        style={{
+                                            color: "#fff",
+                                            fontWeight: "600",
+                                            fontSize: 9,
+                                            maxWidth: 85,
+                                            textAlign: 'center'
+                                        }}
+                                        numberOfLines={expanded ? 3 : 1}
+                                        ellipsizeMode='tail'
+                                    >
+                                        {side.name}
+                                    </Text>
+                                </Pressable>
+                                <Text style={{ fontSize: 8, color: '#fff' }}>
+                                    ${side.price}
                                 </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: '#F95837',
-                                        borderRadius: 10,
-                                        width: 10,
-                                        height: 10,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <Ionicons name="add" size={7} color="#fff" />
-                                </View>
                             </View>
                         </View>
                     ))}
@@ -599,10 +620,10 @@ export default function ItemId() {
                                                         }}
                                                     >
                                                         <Text style={{ fontSize: 13, color: "#333" }}>
-                                                            • {c.name} ×{c.quantity}
+                                                            • {c.name}{' '}×{' '}<Text>{c.quantity} </Text>
                                                         </Text>
                                                         <Text style={{ fontSize: 13, color: "#333" }}>
-                                                            ${( (c.price ?? 0 )* (c.quantity ?? 1 )).toFixed(2) }
+                                                            ${( (c.price ?? 0 ) * (c.quantity ?? 1 )).toFixed(2) }
                                                         </Text>
                                                     </View>
                                                 ))
