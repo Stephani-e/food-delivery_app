@@ -92,8 +92,9 @@ export default function Index() {
             });
 
 
+            // @ts-ignore
             const deliverableOffers = result.filter(offer =>
-                offer.restaurants.some(r => r.$id === bestBranch.$id)
+                offer.restaurants.some((r: { $id: string }) => r.$id === bestBranch.$id)
             );
 
             setOffers(deliverableOffers);

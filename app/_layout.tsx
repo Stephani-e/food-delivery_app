@@ -36,7 +36,7 @@ export default Sentry.wrap(function RootLayout() {
   const hydrated = useLocationStore((s) => s.hydrated);
   const hydrate = useLocationStore((s) => s.hydrate);
 
-  const { isLoading, isAuthenticated, user, fetchAuthenticatedUser } = useAuthStore();
+  const { isLoading, isAuthenticated, user, fetchAuthenticatedUser, userLoaded } = useAuthStore();
   useCartStore();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -72,14 +72,17 @@ export default Sentry.wrap(function RootLayout() {
 
   // Load cart once user.accountId is ready
   useEffect(() => {
-    if (isAuthenticated && user?.accountId) {
-     const store  = useCartStore.getState();
-     store
-         .loadCartFromServer()
-         .then(() => store.subscribeToCartRealTime())
-         .catch(err => console.error("Failed to load cart:", err));
-    }
-  }, [isAuthenticated, user?.accountId]);
+    if (!userLoaded) return;
+    if (!isAuthenticated) return;
+    if (!user?.accountId) return;;
+
+    const store  = useCartStore.getState();
+
+    store
+        .loadCartFromServer()
+        .then(() => store.subscribeToCartRealTime())
+        .catch(err => console.error("Failed to load cart:", err));
+  }, [userLoaded, isAuthenticated, user?.accountId]);
 
   if (!fontsLoaded) {
     return <SplashScreen message="Loading Fonts..." />

@@ -45,7 +45,6 @@ type LocationStore = {
 const Location_Key = 'selected_location';
 
 export const useLocationStore = create<LocationStore>((set, get) => ({
-
     detected: null,
     selected: null,
     isDeliverable: false,
